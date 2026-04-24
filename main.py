@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import os
 from sklearn.preprocessing import MinMaxScaler
-from tensorflow.keras.models import Sequential
+from tensorflow.keras.models import Sequential, load_model
 from tensorflow.keras.layers import LSTM, Dense, Dropout, Input
 
 # --- PATH DATA ---
@@ -11,6 +11,11 @@ FILE_IKLIM = os.path.join(DATA_DIR, "iklim_semua_kecamatan_aceh_utara_2020_2025.
 FILE_ELEVASI = os.path.join(DATA_DIR, "Elevasi_Kecamatan_Aceh_Utara.csv")
 FILE_PH = os.path.join(DATA_DIR, "pH_Tanah_Kecamatan_Aceh_Utara.csv")
 FILE_HUJAN = os.path.join(DATA_DIR, "Curah_Hujan_Tahunan_Kecamatan_Aceh_Utara_2025.csv")
+MODEL_DIR = "models"
+
+# Pastikan folder model tersedia
+if not os.path.exists(MODEL_DIR):
+    os.makedirs(MODEL_DIR)
 
 # 1. Load Kecamatan Profiles
 def load_kecamatan_data():
@@ -171,18 +176,38 @@ def main():
     split = int(0.8 * len(X))
     X_train, y_train = X[:split], y[:split]
     
-    # Build Model
-    model = Sequential([
-        Input(shape=(SEQ_LENGTH, 3)),
-        LSTM(64, activation='relu', return_sequences=True),
-        Dropout(0.2),
-        LSTM(32, activation='relu'),
-        Dense(3) 
-    ])
-    model.compile(optimizer='adam', loss='mse')
+    # Path untuk model spesifik kecamatan
+    model_path = os.path.join(MODEL_DIR, f"model_lstm_{selected_kec.replace(' ', '_')}.keras")
     
-    print(f"Melatih model LSTM untuk {selected_kec} (Epochs: 5)...")
-    model.fit(X_train, y_train, epochs=5, batch_size=32, verbose=0)
+    if os.path.exists(model_path):
+        print(f"\n[INFO] Model tersimpan ditemukan untuk {selected_kec}.")
+        load_choice = input("Gunakan model tersimpan? (y/n): ").lower()
+        if load_choice == 'y':
+            print("[INFO] Memuat model...")
+            model = load_model(model_path)
+            skip_training = True
+        else:
+            skip_training = False
+    else:
+        skip_training = False
+
+    if not skip_training:
+        # Build Model
+        model = Sequential([
+            Input(shape=(SEQ_LENGTH, 3)),
+            LSTM(64, activation='relu', return_sequences=True),
+            Dropout(0.2),
+            LSTM(32, activation='relu'),
+            Dense(3) 
+        ])
+        model.compile(optimizer='adam', loss='mse')
+        
+        print(f"\n[INFO] Melatih model LSTM baru untuk {selected_kec} (Epochs: 20)...")
+        model.fit(X_train, y_train, epochs=20, batch_size=32, verbose=1)
+        
+        # Simpan model setelah training
+        model.save(model_path)
+        print(f"[SUCCESS] Model disimpan ke: {model_path}")
     
     # Predict next 7 days
     last_seq = scaled_data[-SEQ_LENGTH:]
