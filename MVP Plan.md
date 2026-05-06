@@ -47,7 +47,7 @@ Untuk memastikan kode modular dan mudah dikembangkan, program akan dibagi menjad
 - [x] **Step 2**: Implementasi `labeler.py` untuk membuat dataset pelatihan (`train_data.csv`).
 - [x] **Step 3**: Implementasi `preprocessor.py` untuk menyiapkan tensor X dan y.
 - [x] **Step 4**: Pembuatan arsitektur di `model_factory.py` dan script `train.py`.
-- [ ] **Step 5**: Integrasi hasil prediksi ke dalam script `predict.py`.
+- [x] **Step 5**: Integrasi hasil prediksi ke dalam script `predict.py`.
 
 ## 5. Pertanyaan Terbuka (Open Questions)
 *   **Gambar Input**: Anda menyebutkan "input seperti gambar", apakah yang dimaksud adalah struktur tensor data atau ada format gambar (seperti peta/grafik) yang ingin dijadikan input?
