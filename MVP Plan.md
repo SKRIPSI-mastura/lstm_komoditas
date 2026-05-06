@@ -45,7 +45,7 @@ Untuk memastikan kode modular dan mudah dikembangkan, program akan dibagi menjad
 ## 5. Tahapan Pengerjaan (Checklist)
 - [x] **Step 1**: Implementasi `data_loader.py` dan validasi data gabungan.
 - [x] **Step 2**: Implementasi `labeler.py` untuk membuat dataset pelatihan (`train_data.csv`).
-- [ ] **Step 3**: Implementasi `preprocessor.py` untuk menyiapkan tensor X dan y.
+- [x] **Step 3**: Implementasi `preprocessor.py` untuk menyiapkan tensor X dan y.
 - [ ] **Step 4**: Pembuatan arsitektur di `model_factory.py` dan script `train.py`.
 - [ ] **Step 5**: Integrasi hasil prediksi ke dalam script `predict.py`.
 
