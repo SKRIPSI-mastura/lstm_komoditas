@@ -1,0 +1,225 @@
+komoditas,suhu_c,curah_hujan_mm_tahun,kelembapan_persen,ph_tanah,tanah_liat_persen,tanah_pasir_persen,tanah_debu_persen,tekstur_tanah,elevasi_mdpl,label_kelayakan
+Padi,24.2,2130,78,6.6,36,54,10,Lempung,60,Layak
+Padi,25.5,2207,83,6.3,37,54,9,Lempung,316,Sangat Layak
+Padi,28.9,1807,87,6.5,25,37,38,Lempung,108,Layak
+Padi,26.6,2298,81,6.0,16,49,35,Lempung,365,Sangat Layak
+Padi,26.3,2492,86,6.1,16,34,50,Aluvial,464,Sangat Layak
+Padi,30.7,1499,73,7.3,36,24,40,Lempung Berliat,736,Kurang Layak
+Padi,26.9,2234,86,6.4,22,40,38,Aluvial,494,Sangat Layak
+Padi,25.3,2267,80,6.0,43,40,17,Lempung,229,Sangat Layak
+Padi,28.5,2370,80,6.0,32,54,14,Lempung Berliat,250,Sangat Layak
+Padi,27.5,2234,90,5.7,30,25,45,Aluvial,529,Layak
+Padi,25.8,2529,83,6.1,34,49,17,Lempung Berliat,362,Sangat Layak
+Padi,22.7,3193,72,5.2,45,36,19,Lempung Berliat,860,Kurang Layak
+Padi,30.6,3219,71,7.4,31,20,49,Aluvial,802,Kurang Layak
+Padi,31.5,1779,94,5.2,17,54,29,Lempung,727,Kurang Layak
+Padi,23.0,3347,93,7.3,27,43,30,Aluvial,0,Kurang Layak
+Padi,25.4,2055,83,6.3,16,34,50,Aluvial,168,Sangat Layak
+Padi,23.5,3077,70,7.3,40,50,10,Aluvial,740,Kurang Layak
+Padi,26.1,2293,88,5.6,35,26,39,Lempung Berliat,42,Layak
+Padi,28.3,2219,79,6.2,28,31,41,Aluvial,257,Sangat Layak
+Padi,22.5,3035,92,5.4,39,35,26,Aluvial,0,Kurang Layak
+Padi,30.4,1659,93,5.2,38,55,7,Aluvial,802,Kurang Layak
+Padi,28.7,2457,82,6.5,33,50,17,Lempung Berliat,351,Sangat Layak
+Padi,28.7,2097,79,6.3,36,35,29,Lempung Berliat,309,Sangat Layak
+Padi,27.3,2486,81,6.3,31,40,29,Aluvial,532,Sangat Layak
+Padi,25.9,2118,77,6.5,29,40,31,Aluvial,650,Layak
+Padi,27.4,2445,78,6.3,31,36,33,Lempung,195,Sangat Layak
+Padi,30.7,1499,92,7.3,15,55,30,Aluvial,0,Kurang Layak
+Padi,28.4,2574,79,6.1,21,41,38,Lempung Berliat,225,Sangat Layak
+Padi,30.5,3018,93,5.3,19,60,21,Lempung,734,Kurang Layak
+Padi,26.6,1811,76,6.8,43,29,28,Lempung,381,Layak
+Padi,24.9,1952,79,6.8,40,22,38,Aluvial,629,Layak
+Padi,28.0,2224,83,6.8,34,29,37,Aluvial,648,Layak
+Jagung,33.7,1806,82,7.6,42,35,23,Lempung Berpasir,0,Kurang Layak
+Jagung,26.6,1334,66,6.9,26,39,35,Lempung Berpasir,1038,Sangat Layak
+Jagung,29.2,1295,67,6.1,39,37,24,Latosol,616,Sangat Layak
+Jagung,30.5,1369,75,6.2,23,31,46,Regosol,822,Sangat Layak
+Jagung,28.9,1266,73,6.4,31,27,42,Latosol,646,Sangat Layak
+Jagung,26.6,1315,70,6.8,36,32,32,Lempung Berpasir,627,Sangat Layak
+Jagung,33.3,1833,83,7.4,37,38,25,Latosol,1586,Kurang Layak
+Jagung,33.9,1881,80,5.6,33,58,9,Regosol,1709,Kurang Layak
+Jagung,28.6,1614,79,6.8,36,25,39,Latosol,425,Layak
+Jagung,27.3,1636,75,6.7,22,32,46,Lempung Berpasir,221,Layak
+Jagung,28.4,1538,64,6.4,35,56,9,Latosol,475,Sangat Layak
+Jagung,28.1,1159,72,6.8,42,26,32,Lempung Berpasir,1000,Sangat Layak
+Jagung,30.4,1359,64,6.3,42,27,31,Regosol,710,Sangat Layak
+Jagung,31.9,1435,79,7.0,34,52,14,Latosol,640,Layak
+Jagung,26.1,1675,69,6.9,23,53,24,Lempung Berpasir,726,Layak
+Jagung,26.7,1234,67,6.3,32,25,43,Lempung Berpasir,424,Sangat Layak
+Jagung,27.0,1195,69,6.4,29,46,25,Regosol,356,Sangat Layak
+Jagung,29.6,1590,64,6.8,33,44,23,Regosol,729,Sangat Layak
+Jagung,28.0,1561,74,6.5,38,54,8,Lempung Berpasir,1019,Sangat Layak
+Jagung,26.9,1337,67,6.7,40,45,15,Regosol,1086,Layak
+Jagung,33.2,1959,80,5.4,23,44,33,Regosol,0,Kurang Layak
+Jagung,27.7,1576,76,6.2,17,50,33,Latosol,29,Layak
+Jagung,30.4,1201,64,6.9,45,35,20,Lempung Berpasir,479,Sangat Layak
+Jagung,26.7,1326,62,7.1,29,36,35,Lempung Berpasir,1150,Layak
+Jagung,31.7,1546,75,6.0,24,26,50,Regosol,868,Layak
+Jagung,31.4,1237,78,6.1,33,60,7,Latosol,364,Layak
+Jagung,31.0,1440,62,7.2,40,22,38,Regosol,520,Layak
+Jagung,25.5,1482,60,6.4,30,26,44,Regosol,650,Layak
+Jagung,30.8,1536,68,6.8,45,37,18,Latosol,923,Layak
+Jagung,28.3,1643,71,6.3,23,48,29,Regosol,365,Layak
+Jagung,29.7,1202,69,6.3,30,33,37,Regosol,532,Layak
+Jagung,30.1,1458,67,6.1,45,32,23,Latosol,377,Sangat Layak
+Kedelai,27.9,1240,69,6.7,29,21,50,Latosol,83,Layak
+Kedelai,25.7,1664,67,6.5,26,47,27,Grumosol,897,Layak
+Kedelai,28.4,1362,67,6.1,21,40,39,Grumosol,244,Sangat Layak
+Kedelai,31.5,2083,84,7.4,41,32,27,Lempung,0,Kurang Layak
+Kedelai,27.6,1364,75,6.4,37,28,35,Lempung,524,Sangat Layak
+Kedelai,25.5,1370,69,6.3,45,23,32,Lempung,316,Sangat Layak
+Kedelai,25.7,1495,70,6.5,45,39,16,Latosol,226,Sangat Layak
+Kedelai,28.6,1563,73,6.2,31,44,25,Lempung,423,Sangat Layak
+Kedelai,27.9,1457,70,6.1,45,26,29,Latosol,691,Sangat Layak
+Kedelai,25.9,1081,64,6.5,28,48,24,Lempung,620,Layak
+Kedelai,26.4,1624,72,6.4,36,34,30,Grumosol,678,Sangat Layak
+Kedelai,29.6,1197,62,6.1,19,37,44,Latosol,744,Layak
+Kedelai,28.7,1557,73,6.7,29,27,44,Lempung,433,Sangat Layak
+Kedelai,30.6,1500,69,5.9,16,47,37,Grumosol,661,Layak
+Kedelai,25.8,1777,74,6.5,45,21,34,Grumosol,719,Sangat Layak
+Kedelai,32.6,844,58,7.2,41,51,8,Lempung,1027,Kurang Layak
+Kedelai,28.2,1714,68,6.5,24,45,31,Grumosol,619,Sangat Layak
+Kedelai,25.8,1351,65,6.6,42,52,6,Latosol,625,Sangat Layak
+Kedelai,27.8,1413,63,6.2,39,51,10,Latosol,562,Layak
+Kedelai,27.7,1756,69,6.5,35,58,7,Grumosol,611,Sangat Layak
+Kedelai,27.7,1531,65,6.8,44,27,29,Latosol,429,Sangat Layak
+Kedelai,25.1,1932,65,6.6,28,50,22,Latosol,882,Layak
+Kedelai,25.0,1190,72,6.7,23,46,31,Grumosol,305,Layak
+Kedelai,25.4,1635,74,6.5,36,51,13,Lempung,647,Sangat Layak
+Kedelai,26.4,1551,70,6.3,25,32,43,Latosol,882,Layak
+Kedelai,25.6,1775,60,6.7,37,44,19,Grumosol,347,Layak
+Kedelai,28.6,1152,79,6.0,25,26,49,Lempung,786,Layak
+Kedelai,29.2,1209,65,6.7,30,36,34,Grumosol,362,Sangat Layak
+Kedelai,25.7,1397,72,6.4,45,40,15,Lempung,518,Sangat Layak
+Kedelai,23.8,2276,84,5.7,35,26,39,Latosol,0,Kurang Layak
+Kedelai,28.7,1376,68,6.1,31,46,23,Latosol,485,Sangat Layak
+Kedelai,25.7,1722,71,6.2,19,34,47,Lempung,429,Sangat Layak
+Kacang Hijau,30.3,1429,64,5.9,32,30,38,Regosol,59,Layak
+Kacang Hijau,22.7,1596,49,7.1,27,56,17,Aluvial,0,Kurang Layak
+Kacang Hijau,31.3,1216,62,6.3,36,23,41,Aluvial,597,Sangat Layak
+Kacang Hijau,32.2,1000,71,6.4,26,34,40,Aluvial,509,Layak
+Kacang Hijau,30.2,1262,67,5.9,18,60,22,Regosol,470,Sangat Layak
+Kacang Hijau,25.3,1055,57,6.9,25,46,29,Lempung Berpasir,140,Layak
+Kacang Hijau,32.0,1056,65,5.9,20,36,44,Regosol,731,Layak
+Kacang Hijau,22.9,1598,50,5.2,36,45,19,Regosol,993,Kurang Layak
+Kacang Hijau,28.5,1051,60,6.1,38,36,26,Aluvial,440,Sangat Layak
+Kacang Hijau,24.4,614,80,5.4,41,49,10,Regosol,872,Kurang Layak
+Kacang Hijau,26.8,955,71,5.9,22,54,24,Regosol,225,Sangat Layak
+Kacang Hijau,31.2,1232,65,6.3,38,29,33,Aluvial,585,Sangat Layak
+Kacang Hijau,28.9,1111,70,5.8,26,33,41,Lempung Berpasir,372,Sangat Layak
+Kacang Hijau,23.3,1705,52,5.4,42,49,9,Aluvial,0,Kurang Layak
+Kacang Hijau,25.2,1350,59,5.7,33,33,34,Aluvial,54,Layak
+Kacang Hijau,27.6,1305,62,5.9,15,37,48,Lempung Berpasir,572,Sangat Layak
+Kacang Hijau,34.9,618,52,7.3,19,46,35,Regosol,979,Kurang Layak
+Kacang Hijau,27.9,1215,64,5.8,34,22,44,Aluvial,581,Layak
+Kacang Hijau,28.7,1474,56,6.2,27,47,26,Regosol,548,Layak
+Kacang Hijau,28.5,1429,61,5.7,19,37,44,Aluvial,499,Layak
+Kacang Hijau,27.6,1496,65,6.2,34,47,19,Aluvial,79,Layak
+Kacang Hijau,29.7,1308,65,6.6,28,48,24,Regosol,586,Sangat Layak
+Kacang Hijau,28.8,1114,60,6.2,36,36,28,Lempung Berpasir,339,Sangat Layak
+Kacang Hijau,28.8,863,56,6.1,38,43,19,Aluvial,649,Layak
+Kacang Hijau,31.2,1175,67,6.2,42,47,11,Aluvial,576,Sangat Layak
+Kacang Hijau,28.0,1071,60,6.3,19,50,31,Lempung Berpasir,267,Sangat Layak
+Kacang Hijau,29.3,988,62,6.0,28,55,17,Aluvial,627,Sangat Layak
+Kacang Hijau,30.1,818,73,6.7,20,37,43,Regosol,562,Layak
+Kacang Hijau,24.5,661,50,7.1,31,33,36,Lempung Berpasir,0,Kurang Layak
+Kacang Hijau,30.1,1266,65,5.9,20,59,21,Lempung Berpasir,183,Sangat Layak
+Kacang Hijau,29.8,1144,64,6.0,39,52,9,Regosol,214,Sangat Layak
+Kacang Hijau,29.9,1189,65,6.1,22,45,33,Lempung Berpasir,632,Sangat Layak
+Kacang Tanah,27.7,1128,60,6.0,25,27,48,Pasir Berlempung,143,Sangat Layak
+Kacang Tanah,25.9,1272,59,6.2,36,42,22,Pasir Berlempung,50,Layak
+Kacang Tanah,26.5,1426,69,6.2,33,45,22,Regosol,438,Sangat Layak
+Kacang Tanah,28.1,1445,61,6.5,29,43,28,Lempung Berpasir,177,Sangat Layak
+Kacang Tanah,28.9,1260,63,6.0,25,34,41,Lempung Berpasir,279,Sangat Layak
+Kacang Tanah,29.1,1262,61,6.4,26,29,45,Lempung Berpasir,239,Sangat Layak
+Kacang Tanah,27.1,1104,68,5.8,30,49,21,Pasir Berlempung,456,Sangat Layak
+Kacang Tanah,31.5,1295,67,6.3,25,29,46,Regosol,307,Layak
+Kacang Tanah,27.1,1092,56,6.2,24,49,27,Lempung Berpasir,316,Layak
+Kacang Tanah,27.6,1310,70,5.8,34,52,14,Pasir Berlempung,301,Sangat Layak
+Kacang Tanah,30.5,1527,64,6.6,35,32,33,Regosol,225,Layak
+Kacang Tanah,31.7,1215,71,6.6,37,25,38,Lempung Berpasir,353,Layak
+Kacang Tanah,29.4,1456,65,6.2,26,43,31,Regosol,525,Sangat Layak
+Kacang Tanah,27.4,1318,70,6.3,17,41,42,Pasir Berlempung,66,Layak
+Kacang Tanah,27.5,1397,70,6.2,19,41,40,Pasir Berlempung,174,Sangat Layak
+Kacang Tanah,27.9,1446,67,6.1,34,25,41,Regosol,270,Sangat Layak
+Kacang Tanah,27.3,989,69,6.7,36,53,11,Pasir Berlempung,65,Layak
+Kacang Tanah,27.5,1153,58,5.8,21,34,45,Lempung Berpasir,700,Layak
+Kacang Tanah,29.9,1082,68,6.4,16,41,43,Pasir Berlempung,508,Sangat Layak
+Kacang Tanah,28.0,1108,69,6.4,40,30,30,Lempung Berpasir,442,Sangat Layak
+Kacang Tanah,29.7,1066,63,5.9,38,48,14,Lempung Berpasir,163,Layak
+Kacang Tanah,29.8,1237,69,6.0,29,49,22,Regosol,463,Sangat Layak
+Kacang Tanah,27.9,1013,59,6.3,42,36,22,Regosol,36,Layak
+Kacang Tanah,32.3,1778,50,5.1,19,47,34,Regosol,0,Kurang Layak
+Kacang Tanah,32.9,821,54,5.3,18,41,41,Regosol,729,Kurang Layak
+Kacang Tanah,23.2,1698,80,5.3,19,55,26,Regosol,827,Kurang Layak
+Kacang Tanah,27.6,1166,59,6.1,29,24,47,Regosol,186,Sangat Layak
+Kacang Tanah,25.1,1260,59,5.7,34,42,24,Regosol,168,Layak
+Kacang Tanah,29.2,1259,63,6.5,32,52,16,Pasir Berlempung,470,Sangat Layak
+Kacang Tanah,27.7,1229,67,6.8,26,24,50,Pasir Berlempung,241,Layak
+Kacang Tanah,25.7,1307,70,5.7,26,54,20,Pasir Berlempung,237,Layak
+Kacang Tanah,29.7,1235,67,6.3,40,28,32,Regosol,166,Sangat Layak
+Ubi Jalar,24.6,1256,74,6.1,24,52,24,Pasir Berlempung,526,Sangat Layak
+Ubi Jalar,22.3,1235,65,6.8,16,41,43,Lempung,327,Layak
+Ubi Jalar,25.2,1079,79,6.0,20,51,29,Lempung,830,Layak
+Ubi Jalar,31.9,1517,85,7.2,17,40,43,Pasir Berlempung,1310,Kurang Layak
+Ubi Jalar,23.3,1082,68,6.6,44,42,14,Lempung,737,Layak
+Ubi Jalar,28.3,1326,64,6.4,26,52,22,Pasir Berlempung,816,Sangat Layak
+Ubi Jalar,23.7,1281,72,6.2,22,43,35,Pasir Berlempung,500,Sangat Layak
+Ubi Jalar,24.3,1102,68,6.2,17,56,27,Lempung,339,Sangat Layak
+Ubi Jalar,26.7,1012,65,6.5,30,53,17,Pasir Berlempung,518,Sangat Layak
+Ubi Jalar,27.3,1216,66,6.4,37,51,12,Latosol,384,Sangat Layak
+Ubi Jalar,19.8,730,85,5.3,17,55,28,Latosol,1520,Kurang Layak
+Ubi Jalar,29.4,1228,75,6.3,18,32,50,Latosol,950,Layak
+Ubi Jalar,22.2,1165,67,6.7,32,28,40,Latosol,734,Layak
+Ubi Jalar,25.5,1222,69,6.2,28,56,16,Lempung,293,Sangat Layak
+Ubi Jalar,25.6,1260,66,6.8,39,55,6,Latosol,767,Layak
+Ubi Jalar,23.0,1127,77,6.7,31,29,40,Latosol,364,Layak
+Ubi Jalar,27.0,1055,75,6.6,42,25,33,Pasir Berlempung,420,Sangat Layak
+Ubi Jalar,20.5,1521,83,7.2,34,58,8,Latosol,0,Kurang Layak
+Ubi Jalar,21.8,1629,84,5.2,30,60,10,Lempung,1431,Kurang Layak
+Ubi Jalar,28.4,1263,65,5.6,29,46,25,Latosol,581,Layak
+Ubi Jalar,24.3,1287,67,6.7,26,45,29,Lempung,334,Sangat Layak
+Ubi Jalar,22.8,931,62,6.2,16,38,46,Pasir Berlempung,1134,Layak
+Ubi Jalar,29.7,1426,76,6.9,38,40,22,Latosol,227,Layak
+Ubi Jalar,26.1,1124,66,5.5,45,45,10,Latosol,606,Layak
+Ubi Jalar,25.3,922,69,6.6,35,50,15,Latosol,445,Sangat Layak
+Ubi Jalar,19.9,1671,57,7.2,32,38,30,Pasir Berlempung,0,Kurang Layak
+Ubi Jalar,28.3,1206,65,6.7,27,43,30,Lempung,812,Sangat Layak
+Ubi Jalar,24.9,858,72,6.1,37,41,22,Pasir Berlempung,964,Layak
+Ubi Jalar,26.9,1136,66,6.4,20,45,35,Pasir Berlempung,1188,Layak
+Ubi Jalar,31.3,1610,82,5.3,18,46,36,Pasir Berlempung,1486,Kurang Layak
+Ubi Jalar,31.5,602,83,5.4,30,30,40,Lempung,1459,Kurang Layak
+Ubi Jalar,26.9,914,75,5.9,15,48,37,Latosol,465,Sangat Layak
+Ubi Kayu,25.8,1752,75,6.2,42,23,35,Lempung,1058,Layak
+Ubi Kayu,27.6,1896,72,6.0,20,49,31,Mediteran,1120,Sangat Layak
+Ubi Kayu,30.1,2301,77,7.0,23,59,18,Latosol,726,Layak
+Ubi Kayu,27.4,2147,79,6.7,37,33,30,Mediteran,921,Sangat Layak
+Ubi Kayu,27.7,2140,76,5.9,18,56,26,Mediteran,909,Sangat Layak
+Ubi Kayu,23.0,2566,52,4.3,35,36,29,Lempung,1596,Kurang Layak
+Ubi Kayu,28.8,1544,66,6.6,22,35,43,Lempung,345,Sangat Layak
+Ubi Kayu,27.1,1390,70,6.2,36,28,36,Lempung,304,Sangat Layak
+Ubi Kayu,22.2,2714,90,4.7,35,56,9,Latosol,0,Kurang Layak
+Ubi Kayu,21.6,586,88,4.3,45,38,17,Lempung,1504,Kurang Layak
+Ubi Kayu,32.4,1502,71,6.6,31,51,18,Latosol,1333,Layak
+Ubi Kayu,23.4,926,58,4.4,40,38,22,Latosol,1840,Kurang Layak
+Ubi Kayu,29.7,1608,70,5.8,27,26,47,Latosol,277,Layak
+Ubi Kayu,32.4,1010,69,6.1,23,41,36,Lempung,452,Layak
+Ubi Kayu,26.4,1539,65,6.7,29,39,32,Lempung,239,Layak
+Ubi Kayu,32.1,2055,67,5.3,44,38,18,Latosol,551,Layak
+Ubi Kayu,26.5,1437,76,6.4,28,55,17,Lempung,1121,Sangat Layak
+Ubi Kayu,35.1,2768,89,7.8,43,52,5,Latosol,0,Kurang Layak
+Ubi Kayu,28.6,1404,68,6.4,17,52,31,Latosol,700,Sangat Layak
+Ubi Kayu,28.6,1685,61,6.2,40,39,21,Mediteran,1084,Layak
+Ubi Kayu,25.8,1496,66,6.1,37,24,39,Latosol,787,Sangat Layak
+Ubi Kayu,21.5,816,90,8.0,28,43,29,Mediteran,1672,Kurang Layak
+Ubi Kayu,29.5,1895,73,6.5,26,27,47,Lempung,460,Sangat Layak
+Ubi Kayu,26.5,2180,77,6.6,24,49,27,Lempung,906,Sangat Layak
+Ubi Kayu,27.4,1344,71,5.4,16,46,38,Latosol,922,Layak
+Ubi Kayu,26.2,1834,71,6.5,42,23,35,Latosol,520,Sangat Layak
+Ubi Kayu,26.1,1325,81,5.1,31,38,31,Lempung,351,Layak
+Ubi Kayu,29.2,2158,80,5.6,43,29,28,Lempung,1478,Layak
+Ubi Kayu,27.4,1354,79,6.8,44,31,25,Mediteran,863,Sangat Layak
+Ubi Kayu,24.4,1516,76,6.0,31,40,29,Mediteran,1044,Layak
+Ubi Kayu,27.8,1979,72,6.8,24,29,47,Latosol,1025,Sangat Layak
+Ubi Kayu,32.7,1835,63,5.6,21,41,38,Mediteran,970,Layak

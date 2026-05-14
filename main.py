@@ -1,9 +1,11 @@
 import numpy as np
 import pandas as pd
 import os
-from sklearn.preprocessing import MinMaxScaler
+from sklearn.preprocessing import MinMaxScaler, LabelEncoder
 from tensorflow.keras.models import Sequential, load_model
 from tensorflow.keras.layers import LSTM, Dense, Dropout, Input
+from tensorflow.keras.utils import to_categorical
+import joblib
 
 # --- PATH DATA ---
 DATA_DIR = "data"
@@ -11,7 +13,13 @@ FILE_IKLIM = os.path.join(DATA_DIR, "iklim_semua_kecamatan_aceh_utara_2020_2025.
 FILE_ELEVASI = os.path.join(DATA_DIR, "Elevasi_Kecamatan_Aceh_Utara.csv")
 FILE_TANAH = os.path.join(DATA_DIR, "data_tanah_aceh_utara2.csv")
 FILE_HUJAN = os.path.join(DATA_DIR, "data_curah_hujan_aceh_utara.csv")
+FILE_DATASET_TANAMAN = os.path.join(DATA_DIR, "dataset_lstm_tanaman.csv")
 MODEL_DIR = "models"
+MODEL_REKOMENDASI_PATH = os.path.join(MODEL_DIR, "recommender_model.keras")
+SCALER_REKOMENDASI_PATH = os.path.join(MODEL_DIR, "recommender_scaler.pkl")
+ENCODER_KOMODITAS_PATH = os.path.join(MODEL_DIR, "encoder_komoditas.pkl")
+ENCODER_TEKSTUR_PATH = os.path.join(MODEL_DIR, "encoder_tekstur.pkl")
+ENCODER_LABEL_PATH = os.path.join(MODEL_DIR, "encoder_label.pkl")
 
 # Pastikan folder model tersedia
 if not os.path.exists(MODEL_DIR):
@@ -37,7 +45,7 @@ def load_kecamatan_data():
     hujan_tahunan.rename(columns={'curah_hujan': 'curah_hujan_tahunan'}, inplace=True)
     
     merged = df_elev[['kecamatan', 'elevasi_mdpl']].merge(
-        df_tanah[['kecamatan', 'tanah_liat', 'tekstur_tanah']], on='kecamatan'
+        df_tanah[['kecamatan', 'ph_tanah', 'tanah_liat', 'tanah_pasir', 'tanah_debu', 'tekstur_tanah']], on='kecamatan'
     ).merge(
         hujan_tahunan[['kecamatan', 'curah_hujan_tahunan']], on='kecamatan'
     )
@@ -49,6 +57,9 @@ def load_kecamatan_data():
             "elevasi": row['elevasi_mdpl'],
             # Nilai ph_tanah dan tanah_liat di dataset tertukar, jadi kita ambil kolom tanah_liat sebagai pH
             "ph": row['tanah_liat'],
+            "tanah_liat_persen": row['ph_tanah'],
+            "tanah_pasir_persen": row['tanah_pasir'],
+            "tanah_debu_persen": row['tanah_debu'],
             "hujan_tahunan": row['curah_hujan_tahunan'],
             # Gunakan tekstur_tanah sebagai jenis tanah
             "jenis_tanah": row['tekstur_tanah'],
@@ -78,65 +89,104 @@ def create_sequences(data, seq_length):
         ys.append(y)
     return np.array(xs), np.array(ys)
 
-# 4. Recommendation Logic
+# 4. Recommendation Model Training & Inference
+def train_recommendation_model():
+    if os.path.exists(MODEL_REKOMENDASI_PATH):
+        return
+
+    print("\n[INFO] Melatih Model Neural Network Rekomendasi Tanaman...")
+    df = pd.read_csv(FILE_DATASET_TANAMAN)
+
+    le_komoditas = LabelEncoder()
+    df['komoditas_encoded'] = le_komoditas.fit_transform(df['komoditas'])
+    
+    le_tekstur = LabelEncoder()
+    df['tekstur_encoded'] = le_tekstur.fit_transform(df['tekstur_tanah'])
+
+    le_label = LabelEncoder()
+    df['label_encoded'] = le_label.fit_transform(df['label_kelayakan'])
+
+    X = df[['komoditas_encoded', 'suhu_c', 'curah_hujan_mm_tahun', 'kelembapan_persen', 
+            'ph_tanah', 'tanah_liat_persen', 'tanah_pasir_persen', 'tanah_debu_persen', 
+            'tekstur_encoded', 'elevasi_mdpl']]
+    y = to_categorical(df['label_encoded'])
+
+    scaler = MinMaxScaler()
+    X_scaled = scaler.fit_transform(X)
+
+    model = Sequential([
+        Input(shape=(X_scaled.shape[1],)),
+        Dense(64, activation='relu'),
+        Dropout(0.2),
+        Dense(32, activation='relu'),
+        Dense(y.shape[1], activation='softmax')
+    ])
+    model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
+    
+    # Latih model regresi
+    model.fit(X_scaled, y, epochs=50, batch_size=16, verbose=0)
+    
+    model.save(MODEL_REKOMENDASI_PATH)
+    joblib.save(scaler, SCALER_REKOMENDASI_PATH)
+    joblib.save(le_komoditas, ENCODER_KOMODITAS_PATH)
+    joblib.save(le_tekstur, ENCODER_TEKSTUR_PATH)
+    joblib.save(le_label, ENCODER_LABEL_PATH)
+    print(f"[SUCCESS] Model rekomendasi disimpan ke: {MODEL_REKOMENDASI_PATH}")
+
 def recommend_crops(climate_pred, inputs):
     # climate_pred: [suhu, kelembapan, ws2m]
-    suhu, hum, ws2m = climate_pred
-    tanah = inputs['jenis_tanah']
-    ph = inputs['ph_tanah']
-    elev = inputs['elevasi']
-    hujan_tahunan = inputs['hujan_tahunan']
-    risk = inputs['resiko_bencana']
+    suhu, hum, _ = climate_pred
     
-    # Estimasi ketersediaan air berdasarkan curah hujan tahunan
-    # Rata-rata di Aceh Utara ~2000mm. Jika > 2200 dianggap tinggi, < 1800 rendah.
-    air = 'Tinggi' if hujan_tahunan > 2100 else 'Sedang'
-    
-    crops = {
-        "Padi": 0, "Jagung": 0, "Kedelai": 0, 
-        "Kacang Hijau": 0, "Kacang Tanah": 0, 
-        "Ubi Jalar": 0, "Ubi Kayu": 0
-    }
-    
-    for crop in crops:
+    if not os.path.exists(MODEL_REKOMENDASI_PATH):
+        train_recommendation_model()
+        
+    model = load_model(MODEL_REKOMENDASI_PATH)
+    scaler = joblib.load(SCALER_REKOMENDASI_PATH)
+    le_komoditas = joblib.load(ENCODER_KOMODITAS_PATH)
+    le_tekstur = joblib.load(ENCODER_TEKSTUR_PATH)
+    le_label = joblib.load(ENCODER_LABEL_PATH)
+
+    crops_to_evaluate = le_komoditas.classes_
+    scores = {}
+
+    for crop in crops_to_evaluate:
+        komoditas_encoded = le_komoditas.transform([crop])[0]
+        
+        tekstur_str = inputs['jenis_tanah']
+        if tekstur_str in le_tekstur.classes_:
+            tekstur_encoded = le_tekstur.transform([tekstur_str])[0]
+        else:
+            tekstur_encoded = 0
+            
+        X_input = np.array([[
+            komoditas_encoded,
+            suhu,
+            inputs['hujan_tahunan'],
+            hum,
+            inputs['ph_tanah'],
+            inputs['tanah_liat_persen'],
+            inputs['tanah_pasir_persen'],
+            inputs['tanah_debu_persen'],
+            tekstur_encoded,
+            inputs['elevasi']
+        ]])
+        
+        X_scaled = scaler.transform(X_input)
+        preds = model.predict(X_scaled, verbose=0)[0]
+        
         score = 0
+        for i, prob in enumerate(preds):
+            label_name = le_label.classes_[i]
+            if label_name == 'Sangat Layak':
+                score += prob * 100
+            elif label_name == 'Layak':
+                score += prob * 60
+            elif label_name == 'Kurang Layak':
+                score += prob * 20
         
-        # 1. Kecocokan Suhu
-        if 24 <= suhu <= 32: score += 20
-        
-        # 2. Kecocokan pH Tanah
-        if 5.5 <= ph <= 7.0: score += 15
-        
-        # 3. Faktor Jenis Tanah
-        if "Aluvial" in tanah:
-            if crop in ["Padi", "Kedelai"]: score += 25
-        elif "Podsolik" in tanah:
-            if crop in ["Jagung", "Ubi Kayu", "Kacang Tanah"]: score += 25
-        
-        # 4. Faktor Elevasi
-        if elev < 100: 
-            if crop in ["Padi", "Kedelai", "Kacang Hijau"]: score += 20
-        else: 
-            if crop in ["Ubi Kayu", "Jagung", "Ubi Jalar"]: score += 20
-            
-        # 5. Faktor Curah Hujan (Gunakan data tahunan sebagai proksi)
-        if crop == "Padi":
-            if hujan_tahunan > 2000 or air == 'Tinggi': score += 20
-        elif crop in ["Jagung", "Kedelai"]:
-            if 1800 < hujan_tahunan < 2200: score += 15
-        elif crop in ["Kacang Tanah", "Ubi Kayu"]:
-            if hujan_tahunan < 2000: score += 15
-            
-        # 6. Faktor Resiko Bencana
-        if risk == 'Tinggi':
-            if crop == "Padi": score += 10
-            elif crop == "Jagung": score -= 20
-        elif risk == 'Rendah':
-            score += 10
-        
-        crops[crop] = min(98, max(40, score + np.random.randint(5, 10)))
-        
-    return dict(sorted(crops.items(), key=lambda item: item[1], reverse=True))
+        scores[crop] = float(score)
+
+    return dict(sorted(scores.items(), key=lambda item: item[1], reverse=True))
 
 # 5. Main Workflow
 def main():
@@ -239,10 +289,16 @@ def main():
         'kecamatan': selected_kec,
         'jenis_tanah': kec_info['jenis_tanah'],
         'ph_tanah': kec_info['ph'],
+        'tanah_liat_persen': kec_info['tanah_liat_persen'],
+        'tanah_pasir_persen': kec_info['tanah_pasir_persen'],
+        'tanah_debu_persen': kec_info['tanah_debu_persen'],
         'elevasi': kec_info['elevasi'],
         'hujan_tahunan': kec_info['hujan_tahunan'],
         'resiko_bencana': kec_info['resiko_bencana']
     }
+    
+    # Panggil fungsi training bila model rekomendasi belum dilatih
+    train_recommendation_model()
     
     recommendations = recommend_crops(avg_pred, user_inputs)
     
