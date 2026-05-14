@@ -9,8 +9,8 @@ from tensorflow.keras.layers import LSTM, Dense, Dropout, Input
 DATA_DIR = "data"
 FILE_IKLIM = os.path.join(DATA_DIR, "iklim_semua_kecamatan_aceh_utara_2020_2025.csv")
 FILE_ELEVASI = os.path.join(DATA_DIR, "Elevasi_Kecamatan_Aceh_Utara.csv")
-FILE_PH = os.path.join(DATA_DIR, "pH_Tanah_Kecamatan_Aceh_Utara.csv")
-FILE_HUJAN = os.path.join(DATA_DIR, "Curah_Hujan_Tahunan_Kecamatan_Aceh_Utara_2025.csv")
+FILE_TANAH = os.path.join(DATA_DIR, "data_tanah_aceh_utara2.csv")
+FILE_HUJAN = os.path.join(DATA_DIR, "data_curah_hujan_aceh_utara.csv")
 MODEL_DIR = "models"
 
 # Pastikan folder model tersedia
@@ -20,19 +20,26 @@ if not os.path.exists(MODEL_DIR):
 # 1. Load Kecamatan Profiles
 def load_kecamatan_data():
     df_elev = pd.read_csv(FILE_ELEVASI)
-    df_ph = pd.read_csv(FILE_PH)
-    df_hujan = pd.read_csv(FILE_HUJAN)
+    # File tanah dan hujan adalah Excel meskipun ekstensinya .csv
+    df_tanah = pd.read_excel(FILE_TANAH, engine='openpyxl')
+    df_hujan = pd.read_excel(FILE_HUJAN, engine='openpyxl')
     
     # Merge data
     # Standardize kecamatan names to handle potential whitespace or case issues
     df_elev['kecamatan'] = df_elev['kecamatan'].str.strip()
-    df_ph['kecamatan'] = df_ph['kecamatan'].str.strip()
+    df_tanah['kecamatan'] = df_tanah['kecamatan'].str.strip()
     df_hujan['kecamatan'] = df_hujan['kecamatan'].str.strip()
     
+    # Hitung rata-rata curah hujan tahunan dari data harian
+    df_hujan['date'] = pd.to_datetime(df_hujan['date'].astype(str))
+    df_hujan['year'] = df_hujan['date'].dt.year
+    hujan_tahunan = df_hujan.groupby(['kecamatan', 'year'])['curah_hujan'].sum().groupby('kecamatan').mean().reset_index()
+    hujan_tahunan.rename(columns={'curah_hujan': 'curah_hujan_tahunan'}, inplace=True)
+    
     merged = df_elev[['kecamatan', 'elevasi_mdpl']].merge(
-        df_ph[['kecamatan', 'ph_tanah_mean']], on='kecamatan'
+        df_tanah[['kecamatan', 'tanah_liat', 'tekstur_tanah']], on='kecamatan'
     ).merge(
-        df_hujan[['kecamatan', 'curah_hujan_tahunan']], on='kecamatan'
+        hujan_tahunan[['kecamatan', 'curah_hujan_tahunan']], on='kecamatan'
     )
     
     # Convert to dictionary for easier access
@@ -40,10 +47,11 @@ def load_kecamatan_data():
     for _, row in merged.iterrows():
         kec_dict[row['kecamatan']] = {
             "elevasi": row['elevasi_mdpl'],
-            "ph": row['ph_tanah_mean'],
+            # Nilai ph_tanah dan tanah_liat di dataset tertukar, jadi kita ambil kolom tanah_liat sebagai pH
+            "ph": row['tanah_liat'],
             "hujan_tahunan": row['curah_hujan_tahunan'],
-            # Jenis tanah dan resiko bencana tidak ada di CSV, gunakan estimasi
-            "jenis_tanah": "Aluvial" if row['elevasi_mdpl'] < 50 else "Podsolik",
+            # Gunakan tekstur_tanah sebagai jenis tanah
+            "jenis_tanah": row['tekstur_tanah'],
             "resiko_bencana": "Tinggi" if row['elevasi_mdpl'] < 15 else "Rendah"
         }
     return kec_dict
@@ -55,10 +63,10 @@ def load_climate_data(kecamatan_name):
     df_kec = df[df['kecamatan'].str.strip() == kecamatan_name].copy()
     df_kec.set_index('date', inplace=True)
     
-    # Pilih fitur: T2M (Suhu), RH2M (Kelembapan), WS2M (Kecepatan Angin)
-    # PRECTOT kosong di data, jadi kita gunakan fitur yang tersedia
-    features = ['T2M', 'RH2M', 'WS2M']
-    return df_kec[features].fillna(method='ffill')
+    # Pilih fitur: Menggunakan nama kolom bahasa Indonesia sesuai dataset baru
+    features = ['Suhu rata-rata', 'Kelembapan udara', 'Kecepatan angin']
+    # Gunakan ffill dari ffill() karena argumen 'method' deprecated di pandas terbaru
+    return df_kec[features].ffill()
 
 # 3. Data Preprocessing
 def create_sequences(data, seq_length):
