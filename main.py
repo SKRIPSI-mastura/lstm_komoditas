@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import os
 from sklearn.preprocessing import MinMaxScaler, LabelEncoder
+from sklearn.model_selection import train_test_split
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import LSTM, Dense, Dropout, Input
 from tensorflow.keras.utils import to_categorical
@@ -105,6 +106,8 @@ def train_recommendation_model():
 
     scaler = MinMaxScaler()
     X_scaled = scaler.fit_transform(X)
+    
+    X_train, X_test, y_train, y_test = train_test_split(X_scaled, y, test_size=0.2, random_state=42)
 
     model = Sequential([
         Input(shape=(X_scaled.shape[1],)),
@@ -116,7 +119,10 @@ def train_recommendation_model():
     model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
     
     # Latih model klasifikasi
-    model.fit(X_scaled, y, epochs=50, batch_size=16, verbose=0)
+    model.fit(X_train, y_train, epochs=50, batch_size=16, verbose=0)
+    
+    # Evaluasi model
+    loss, accuracy = model.evaluate(X_test, y_test, verbose=0)
     
     recommender_bundle = {
         'model': model,
@@ -126,6 +132,7 @@ def train_recommendation_model():
         'le_label': le_label
     }
     print("[SUCCESS] Model rekomendasi berhasil dilatih dan disimpan di memori.")
+    print(f"[EVALUASI] Akurasi Neural Network Rekomendasi Tanaman: {accuracy*100:.2f}%")
 
 def recommend_crops(climate_pred, inputs):
     # climate_pred: [suhu, kelembapan, ws2m]
@@ -270,6 +277,7 @@ def main():
     
     split = int(0.8 * len(X))
     X_train, y_train = X[:split], y[:split]
+    X_test, y_test = X[split:], y[split:]
     
     # Build Model
     model = Sequential([
@@ -283,6 +291,10 @@ def main():
     
     print(f"\n[INFO] Melatih model LSTM baru untuk {selected_kec} (Epochs: 20)...")
     model.fit(X_train, y_train, epochs=20, batch_size=32, verbose=1)
+    
+    # Evaluasi LSTM
+    test_loss = model.evaluate(X_test, y_test, verbose=0)
+    print(f"\n[EVALUASI] Mean Squared Error (MSE) LSTM Iklim pada Test Set: {test_loss:.4f}")
     
     # Predict next 7 days
     last_seq = scaled_data[-SEQ_LENGTH:]
