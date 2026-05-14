@@ -2,10 +2,9 @@ import numpy as np
 import pandas as pd
 import os
 from sklearn.preprocessing import MinMaxScaler, LabelEncoder
-from tensorflow.keras.models import Sequential, load_model
+from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import LSTM, Dense, Dropout, Input
 from tensorflow.keras.utils import to_categorical
-import joblib
 
 # --- PATH DATA ---
 DATA_DIR = "data"
@@ -14,16 +13,8 @@ FILE_ELEVASI = os.path.join(DATA_DIR, "Elevasi_Kecamatan_Aceh_Utara.csv")
 FILE_TANAH = os.path.join(DATA_DIR, "data_tanah_aceh_utara2.csv")
 FILE_HUJAN = os.path.join(DATA_DIR, "data_curah_hujan_aceh_utara.csv")
 FILE_DATASET_TANAMAN = os.path.join(DATA_DIR, "dataset_lstm_tanaman.csv")
-MODEL_DIR = "models"
-MODEL_REKOMENDASI_PATH = os.path.join(MODEL_DIR, "recommender_model.keras")
-SCALER_REKOMENDASI_PATH = os.path.join(MODEL_DIR, "recommender_scaler.pkl")
-ENCODER_KOMODITAS_PATH = os.path.join(MODEL_DIR, "encoder_komoditas.pkl")
-ENCODER_TEKSTUR_PATH = os.path.join(MODEL_DIR, "encoder_tekstur.pkl")
-ENCODER_LABEL_PATH = os.path.join(MODEL_DIR, "encoder_label.pkl")
-
-# Pastikan folder model tersedia
-if not os.path.exists(MODEL_DIR):
-    os.makedirs(MODEL_DIR)
+# --- GLOBAL VARIABLES FOR IN-MEMORY MODELS ---
+recommender_bundle = None
 
 # 1. Load Kecamatan Profiles
 def load_kecamatan_data():
@@ -91,7 +82,8 @@ def create_sequences(data, seq_length):
 
 # 4. Recommendation Model Training & Inference
 def train_recommendation_model():
-    if os.path.exists(MODEL_REKOMENDASI_PATH):
+    global recommender_bundle
+    if recommender_bundle is not None:
         return
 
     print("\n[INFO] Melatih Model Neural Network Rekomendasi Tanaman...")
@@ -123,28 +115,30 @@ def train_recommendation_model():
     ])
     model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
     
-    # Latih model regresi
+    # Latih model klasifikasi
     model.fit(X_scaled, y, epochs=50, batch_size=16, verbose=0)
     
-    model.save(MODEL_REKOMENDASI_PATH)
-    joblib.save(scaler, SCALER_REKOMENDASI_PATH)
-    joblib.save(le_komoditas, ENCODER_KOMODITAS_PATH)
-    joblib.save(le_tekstur, ENCODER_TEKSTUR_PATH)
-    joblib.save(le_label, ENCODER_LABEL_PATH)
-    print(f"[SUCCESS] Model rekomendasi disimpan ke: {MODEL_REKOMENDASI_PATH}")
+    recommender_bundle = {
+        'model': model,
+        'scaler': scaler,
+        'le_komoditas': le_komoditas,
+        'le_tekstur': le_tekstur,
+        'le_label': le_label
+    }
+    print("[SUCCESS] Model rekomendasi berhasil dilatih dan disimpan di memori.")
 
 def recommend_crops(climate_pred, inputs):
     # climate_pred: [suhu, kelembapan, ws2m]
     suhu, hum, _ = climate_pred
     
-    if not os.path.exists(MODEL_REKOMENDASI_PATH):
+    if recommender_bundle is None:
         train_recommendation_model()
         
-    model = load_model(MODEL_REKOMENDASI_PATH)
-    scaler = joblib.load(SCALER_REKOMENDASI_PATH)
-    le_komoditas = joblib.load(ENCODER_KOMODITAS_PATH)
-    le_tekstur = joblib.load(ENCODER_TEKSTUR_PATH)
-    le_label = joblib.load(ENCODER_LABEL_PATH)
+    model = recommender_bundle['model']
+    scaler = recommender_bundle['scaler']
+    le_komoditas = recommender_bundle['le_komoditas']
+    le_tekstur = recommender_bundle['le_tekstur']
+    le_label = recommender_bundle['le_label']
 
     crops_to_evaluate = le_komoditas.classes_
     scores = {}
@@ -187,6 +181,49 @@ def recommend_crops(climate_pred, inputs):
         scores[crop] = float(score)
 
     return dict(sorted(scores.items(), key=lambda item: item[1], reverse=True))
+
+def generate_explanation(crop, inputs, climate_pred):
+    suhu, hum, _ = climate_pred
+    ph = inputs['ph_tanah']
+    tekstur = inputs['jenis_tanah']
+    elevasi = inputs['elevasi']
+    hujan = inputs['hujan_tahunan']
+    
+    reasons = []
+    
+    # Suhu
+    if suhu > 26:
+        reasons.append(f"suhu hangat ({suhu:.1f} °C)")
+    else:
+        reasons.append(f"suhu sejuk ({suhu:.1f} °C)")
+        
+    # Kelembapan & Hujan
+    if hum > 80:
+        reasons.append(f"kelembapan udara tinggi ({hum:.1f}%)")
+    else:
+        reasons.append(f"kelembapan udara ideal ({hum:.1f}%)")
+        
+    if hujan > 2000:
+        reasons.append(f"curah hujan melimpah ({hujan:.0f} mm/tahun)")
+    else:
+        reasons.append(f"curah hujan moderat ({hujan:.0f} mm/tahun)")
+        
+    # Tanah
+    if 5.5 <= ph <= 7.0:
+        reasons.append(f"pH tanah ideal ({ph:.2f})")
+    elif ph < 5.5:
+        reasons.append(f"toleransi yang baik terhadap tanah masam (pH {ph:.2f})")
+    else:
+        reasons.append(f"kemampuan beradaptasi di pH {ph:.2f}")
+        
+    reasons.append(f"tekstur {tekstur} yang mendukung perakaran")
+    reasons.append(f"ketinggian lahan {elevasi:.1f} mdpl")
+    
+    # Menggabungkan kalimat
+    explanation = f"{crop} merupakan komoditas yang paling optimal ditanam di {inputs['kecamatan']} karena didukung oleh "
+    explanation += ", ".join(reasons[:-1]) + f", serta sesuai dengan {reasons[-1]}."
+    
+    return explanation
 
 # 5. Main Workflow
 def main():
@@ -234,38 +271,18 @@ def main():
     split = int(0.8 * len(X))
     X_train, y_train = X[:split], y[:split]
     
-    # Path untuk model spesifik kecamatan
-    model_path = os.path.join(MODEL_DIR, f"model_lstm_{selected_kec.replace(' ', '_')}.keras")
+    # Build Model
+    model = Sequential([
+        Input(shape=(SEQ_LENGTH, 3)),
+        LSTM(64, activation='relu', return_sequences=True),
+        Dropout(0.2),
+        LSTM(32, activation='relu'),
+        Dense(3) 
+    ])
+    model.compile(optimizer='adam', loss='mse')
     
-    if os.path.exists(model_path):
-        print(f"\n[INFO] Model tersimpan ditemukan untuk {selected_kec}.")
-        load_choice = input("Gunakan model tersimpan? (y/n): ").lower()
-        if load_choice == 'y':
-            print("[INFO] Memuat model...")
-            model = load_model(model_path)
-            skip_training = True
-        else:
-            skip_training = False
-    else:
-        skip_training = False
-
-    if not skip_training:
-        # Build Model
-        model = Sequential([
-            Input(shape=(SEQ_LENGTH, 3)),
-            LSTM(64, activation='relu', return_sequences=True),
-            Dropout(0.2),
-            LSTM(32, activation='relu'),
-            Dense(3) 
-        ])
-        model.compile(optimizer='adam', loss='mse')
-        
-        print(f"\n[INFO] Melatih model LSTM baru untuk {selected_kec} (Epochs: 20)...")
-        model.fit(X_train, y_train, epochs=20, batch_size=32, verbose=1)
-        
-        # Simpan model setelah training
-        model.save(model_path)
-        print(f"[SUCCESS] Model disimpan ke: {model_path}")
+    print(f"\n[INFO] Melatih model LSTM baru untuk {selected_kec} (Epochs: 20)...")
+    model.fit(X_train, y_train, epochs=20, batch_size=32, verbose=1)
     
     # Predict next 7 days
     last_seq = scaled_data[-SEQ_LENGTH:]
@@ -304,7 +321,18 @@ def main():
     
     print(f"\n--- Rekomendasi Komoditas untuk {selected_kec} ---")
     for crop, score in recommendations.items():
-        print(f"- {crop}: {score}% Kecocokan")
+        print(f"- {crop}: {score:.2f}% Kecocokan")
+        
+    # Tampilkan tanaman paling cocok dan penjelasannya
+    top_crop = list(recommendations.keys())[0]
+    top_score = list(recommendations.values())[0]
+    
+    print(f"\n==================================================")
+    print(f"** TANAMAN PALING COCOK: {top_crop.upper()} ({top_score:.2f}%) **")
+    print(f"==================================================")
+    print("Alasan:")
+    print(generate_explanation(top_crop, user_inputs, avg_pred))
+    print("==================================================\n")
 
 if __name__ == "__main__":
     main()
