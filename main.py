@@ -5,6 +5,7 @@ from sklearn.preprocessing import MinMaxScaler, LabelEncoder
 from sklearn.model_selection import train_test_split
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import LSTM, Dense, Dropout, Input
+# pyrefly: ignore [missing-import]
 from tensorflow.keras.utils import to_categorical
 
 # --- PATH DATA ---
@@ -105,7 +106,7 @@ def train_recommendation_model():
     y = to_categorical(df['label_encoded'])
 
     scaler = MinMaxScaler()
-    X_scaled = scaler.fit_transform(X)
+    X_scaled = scaler.fit_transform(X.values)
     
     X_train, X_test, y_train, y_test = train_test_split(X_scaled, y, test_size=0.2, random_state=42)
 
@@ -270,7 +271,7 @@ def main():
         return
 
     scaler = MinMaxScaler()
-    scaled_data = scaler.fit_transform(df_climate)
+    scaled_data = scaler.fit_transform(df_climate.values)
     
     SEQ_LENGTH = 30 
     X, y = create_sequences(scaled_data, SEQ_LENGTH)
