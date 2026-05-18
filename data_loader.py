@@ -5,16 +5,17 @@ import os
 DATA_DIR = "data"
 FILE_IKLIM = os.path.join(DATA_DIR, "iklim_semua_kecamatan_aceh_utara_2020_2025.csv")
 FILE_ELEVASI = os.path.join(DATA_DIR, "Elevasi_Kecamatan_Aceh_Utara.csv")
-FILE_PH = os.path.join(DATA_DIR, "pH_Tanah_Kecamatan_Aceh_Utara.csv")
-FILE_HUJAN = os.path.join(DATA_DIR, "Curah_Hujan_Tahunan_Kecamatan_Aceh_Utara_2025.csv")
+FILE_TANAH = os.path.join(DATA_DIR, "data_tanah_aceh_utara2.csv")
+FILE_HUJAN = os.path.join(DATA_DIR, "data_curah_hujan_aceh_utara.csv")
 
 def load_kecamatan_profiles():
     """Memuat data profil tanah dan wilayah untuk setiap kecamatan."""
     print("[INFO] Memuat profil wilayah...")
     
     df_elev = pd.read_csv(FILE_ELEVASI)
-    df_ph = pd.read_csv(FILE_PH)
-    df_hujan = pd.read_csv(FILE_HUJAN)
+    # File tanah dan hujan adalah Excel meskipun ekstensinya .csv
+    df_tanah = pd.read_excel(FILE_TANAH, engine='openpyxl')
+    df_hujan = pd.read_excel(FILE_HUJAN, engine='openpyxl')
     
     # Standardisasi nama kecamatan
     mapping = {
@@ -23,19 +24,27 @@ def load_kecamatan_profiles():
         "Lapang": "Lapangan"
     }
     
-    for df in [df_elev, df_ph, df_hujan]:
+    for df in [df_elev, df_tanah, df_hujan]:
         df['kecamatan'] = df['kecamatan'].str.strip().replace(mapping)
+    
+    # Hitung rata-rata curah hujan tahunan dari data harian
+    df_hujan['date'] = pd.to_datetime(df_hujan['date'].astype(str))
+    df_hujan['year'] = df_hujan['date'].dt.year
+    hujan_tahunan = df_hujan.groupby(['kecamatan', 'year'])['curah_hujan'].sum().groupby('kecamatan').mean().reset_index()
+    hujan_tahunan.rename(columns={'curah_hujan': 'curah_hujan_tahunan'}, inplace=True)
+    
+    # Nilai ph_tanah dan tanah_liat di dataset tertukar, jadi kita ambil kolom tanah_liat sebagai pH
+    df_tanah['ph_tanah_mean'] = df_tanah['tanah_liat']
     
     # Merging profile data
     profiles = df_elev[['kecamatan', 'elevasi_mdpl']].merge(
-        df_ph[['kecamatan', 'ph_tanah_mean']], on='kecamatan', how='left'
+        df_tanah[['kecamatan', 'ph_tanah_mean', 'ph_tanah', 'tanah_pasir', 'tanah_debu', 'tekstur_tanah']], on='kecamatan', how='left'
     ).merge(
-        df_hujan[['kecamatan', 'curah_hujan_tahunan']], on='kecamatan', how='left'
+        hujan_tahunan[['kecamatan', 'curah_hujan_tahunan']], on='kecamatan', how='left'
     )
     
     # Estimasi fitur tambahan yang tidak ada di CSV
-    # Ini bisa disesuaikan jika ada data baru
-    profiles['jenis_tanah'] = profiles['elevasi_mdpl'].apply(lambda x: "Aluvial" if x < 50 else "Podsolik")
+    profiles['jenis_tanah'] = profiles['tekstur_tanah'].fillna("Podsolik")
     profiles['resiko_bencana'] = profiles['elevasi_mdpl'].apply(lambda x: "Tinggi" if x < 15 else "Rendah")
     
     return profiles
@@ -47,15 +56,18 @@ def load_climate_data():
     df['date'] = pd.to_datetime(df['date'])
     df['kecamatan'] = df['kecamatan'].str.strip()
     
-    # PRECTOT biasanya kosong atau tidak konsisten, kita isi dengan 0 jika NaN
-    # atau drop jika tidak diperlukan untuk MVP
-    if 'PRECTOT' in df.columns:
-        df['PRECTOT'] = df['PRECTOT'].fillna(0)
+    # Rename kolom agar cocok dengan ['T2M', 'RH2M', 'WS2M']
+    rename_dict = {
+        'Suhu rata-rata': 'T2M',
+        'Kelembapan udara': 'RH2M',
+        'Kecepatan angin': 'WS2M'
+    }
+    df.rename(columns=rename_dict, inplace=True)
     
-    # Forward fill untuk fitur iklim lainnya jika ada yang bolong
+    # Forward fill untuk fitur iklim jika ada yang bolong
     features = ['T2M', 'RH2M', 'WS2M']
     for f in features:
-        df[f] = df.groupby('kecamatan')[f].transform(lambda x: x.fillna(method='ffill'))
+        df[f] = df.groupby('kecamatan')[f].transform(lambda x: x.ffill())
         
     return df
 
@@ -83,3 +95,4 @@ if __name__ == "__main__":
         print(f"\n[WARNING] Kecamatan berikut tidak memiliki data profil: {missing_kec}")
     else:
         print("\n[SUCCESS] Semua kecamatan berhasil dipasangkan dengan profilnya.")
+

@@ -1,0 +1,30 @@
+{
+    "test_loss": 0.5935103297233582,
+    "test_accuracy": 0.7438971996307373,
+    "class_metrics": {
+        "Jagung": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1_score": 0.0,
+            "support": 2990
+        },
+        "Padi": {
+            "precision": 0.7438972162740899,
+            "recall": 1.0,
+            "f1_score": 0.8531434184675835,
+            "support": 8685
+        }
+    },
+    "macro_avg": {
+        "precision": 0.37194860813704494,
+        "recall": 0.5,
+        "f1-score": 0.42657170923379173,
+        "support": 11675.0
+    },
+    "weighted_avg": {
+        "precision": 0.5533830683803401,
+        "recall": 0.7438972162740899,
+        "f1-score": 0.6346510140805963,
+        "support": 11675.0
+    }
+}

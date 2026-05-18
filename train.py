@@ -7,8 +7,8 @@ from model_factory import create_lstm_model
 
 # --- KONFIGURASI ---
 MODEL_PATH = "models/commodity_lstm_model.keras"
-BATCH_SIZE = 64
-EPOCHS = 30
+BATCH_SIZE = 512
+EPOCHS = 12
 
 def run_training():
     """Proses utama pelatihan model."""
