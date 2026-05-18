@@ -1,0 +1,15 @@
+# Core Data Science & Data Preprocessing
+numpy==1.26.4
+pandas==2.3.3
+scikit-learn==1.6.1
+joblib==1.5.1
+
+# Deep Learning & Machine Learning
+tensorflow==2.21.0
+
+# API Development & Web Integration
+Flask==3.1.0
+flask-cors==6.0.2
+
+# Visualization (for train.py plotting)
+matplotlib==3.9.2
