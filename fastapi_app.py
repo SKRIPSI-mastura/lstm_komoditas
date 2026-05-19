@@ -2,12 +2,10 @@ import os
 import sys
 import logging
 import numpy as np
-import pandas as pd
-from flask import Flask, request, jsonify
-from flask_cors import CORS
-from sklearn.preprocessing import MinMaxScaler
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import LSTM, Dense, Dropout, Input
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+from typing import List, Dict, Any, Optional
 
 # Pastikan workspace root masuk dalam path pencarian python
 sys.path.append(os.path.abspath(os.path.dirname(__file__)))
@@ -16,9 +14,21 @@ sys.path.append(os.path.abspath(os.path.dirname(__file__)))
 import main
 import data_loader
 
-# --- KONFIGURASI FLASK & LOGGING ---
-app = Flask(__name__)
-CORS(app)  # Izinkan frontend mengakses API ini
+# --- KONFIGURASI FASTAPI & LOGGING ---
+app = FastAPI(
+    title="Sistem Rekomendasi Komoditas Pertanian",
+    description="API untuk prediksi cuaca dengan LSTM dan rekomendasi komoditas dengan NN.",
+    version="1.0.0"
+)
+
+# Izinkan frontend mengakses API ini (CORS)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 logging.basicConfig(
     level=logging.INFO,
@@ -32,7 +42,7 @@ logging.basicConfig(
 KEC_DATA = {}
 prediction_cache = {}
 
-def get_suitability_label(score):
+def get_suitability_label(score: float) -> str:
     """Mengubah skor numerik menjadi label kelayakan."""
     if score >= 75.0:
         return "Sangat Layak"
@@ -43,12 +53,12 @@ def get_suitability_label(score):
     else:
         return "Tidak Layak"
 
-def initialize_app():
+@app.on_event("startup")
+async def startup_event():
     """Inisialisasi data kecamatan dan model rekomendasi di memori pada startup."""
     global KEC_DATA
-    # Inisialisasi ini hanya dilakukan sekali
     if not KEC_DATA:
-        logging.info("Memulai inisialisasi aplikasi backend...")
+        logging.info("Memulai inisialisasi aplikasi backend FastAPI...")
         try:
             # 1. Muat profil kecamatan
             KEC_DATA = main.load_kecamatan_data()
@@ -60,44 +70,40 @@ def initialize_app():
         except Exception as e:
             logging.error(f"Gagal melakukan inisialisasi startup: {str(e)}")
 
-# Panggil inisialisasi saat aplikasi pertama kali dimuat
-initialize_app()
-
-@app.route('/', methods=['GET'])
+@app.get("/")
 def index():
-    """Endpoint root untuk memastikan API berjalan dan tidak menampilkan 404 di browser."""
-    return jsonify({
+    """Endpoint root untuk memastikan API berjalan."""
+    return {
         "status": "success",
-        "message": "Selamat datang di API Sistem Rekomendasi Komoditas Pertanian. Akses /api/health untuk status sistem."
-    }), 200
+        "message": "Selamat datang di API Sistem Rekomendasi Komoditas Pertanian. Akses /docs untuk dokumentasi API."
+    }
 
-@app.route('/api/health', methods=['GET'])
+@app.get("/api/health")
 def health_check():
     """Endpoint untuk mengecek status kesehatan API."""
-    return jsonify({
+    return {
         "status": "success",
         "message": "Sistem Rekomendasi Komoditas API berjalan normal.",
         "cache_entries": list(prediction_cache.keys()),
         "model_loaded": main.recommender_bundle is not None
-    }), 200
+    }
 
-@app.route('/api/kecamatan', methods=['GET'])
+@app.get("/api/kecamatan")
 def get_all_kecamatan():
     """Mendapatkan daftar semua kecamatan yang tersedia."""
     if not KEC_DATA:
-        return jsonify({"status": "error", "message": "Data kecamatan belum dimuat."}), 500
+        raise HTTPException(status_code=500, detail="Data kecamatan belum dimuat.")
     
     list_kec = sorted(list(KEC_DATA.keys()))
-    return jsonify({
+    return {
         "status": "success",
         "count": len(list_kec),
         "data": list_kec
-    }), 200
+    }
 
-@app.route('/api/kecamatan/<string:kecamatan_name>', methods=['GET'])
-def get_kecamatan_profile(kecamatan_name):
+@app.get("/api/kecamatan/{kecamatan_name}")
+def get_kecamatan_profile(kecamatan_name: str):
     """Mendapatkan profil tanah dan geografis untuk kecamatan tertentu."""
-    # Cari dengan nama kecamatan yang di-strip (case-insensitive)
     search_name = kecamatan_name.strip()
     match_key = None
     
@@ -107,21 +113,18 @@ def get_kecamatan_profile(kecamatan_name):
             break
             
     if not match_key:
-        return jsonify({
-            "status": "error",
-            "message": f"Kecamatan '{kecamatan_name}' tidak ditemukan."
-        }), 404
+        raise HTTPException(status_code=404, detail=f"Kecamatan '{kecamatan_name}' tidak ditemukan.")
         
     profile = KEC_DATA[match_key].copy()
     profile['kecamatan'] = match_key
     
-    return jsonify({
+    return {
         "status": "success",
         "data": profile
-    }), 200
+    }
 
-@app.route('/api/recommend/<string:kecamatan_name>', methods=['GET'])
-def recommend_by_kecamatan(kecamatan_name):
+@app.get("/api/recommend/{kecamatan_name}")
+def recommend_by_kecamatan(kecamatan_name: str):
     """
     Menjalankan pipeline LSTM + NN Rekomendasi untuk kecamatan tertentu.
     Menggunakan caching memori untuk memberikan respon instan setelah kalkulasi pertama.
@@ -135,20 +138,17 @@ def recommend_by_kecamatan(kecamatan_name):
             break
             
     if not match_key:
-        return jsonify({
-            "status": "error",
-            "message": f"Kecamatan '{kecamatan_name}' tidak ditemukan."
-        }), 404
+        raise HTTPException(status_code=404, detail=f"Kecamatan '{kecamatan_name}' tidak ditemukan.")
         
     # Cek cache terlebih dahulu
     if match_key in prediction_cache:
         logging.info(f"[CACHE HIT] Mengembalikan hasil rekomendasi untuk {match_key} dari cache.")
-        return jsonify({
+        return {
             "status": "success",
             "source": "cache",
             "data": prediction_cache[match_key]
-        }), 200
-
+        }
+        
     logging.info(f"[CACHE MISS] Memproses prediksi LSTM dan rekomendasi untuk {match_key}...")
     
     try:
@@ -157,21 +157,16 @@ def recommend_by_kecamatan(kecamatan_name):
         # 1. Load historical climate data
         df_climate = main.load_climate_data(match_key)
         if df_climate.empty:
-            return jsonify({
-                "status": "error",
-                "message": f"Data iklim historis untuk {match_key} tidak ditemukan."
-            }), 404
+            raise HTTPException(status_code=404, detail=f"Data iklim historis untuk {match_key} tidak ditemukan.")
             
         # 2. Preprocess data untuk LSTM
+        from sklearn.preprocessing import MinMaxScaler
         scaler = MinMaxScaler()
         scaled_data = scaler.fit_transform(df_climate.values)
         
         SEQ_LENGTH = 30
         if len(scaled_data) < SEQ_LENGTH:
-            return jsonify({
-                "status": "error",
-                "message": f"Data iklim historis untuk {match_key} tidak cukup (min 30 hari)."
-            }), 400
+            raise HTTPException(status_code=400, detail=f"Data iklim historis untuk {match_key} tidak cukup (min 30 hari).")
             
         X, y = main.create_sequences(scaled_data, SEQ_LENGTH)
         
@@ -180,6 +175,8 @@ def recommend_by_kecamatan(kecamatan_name):
         logging.info(f"[LIVE TRAINING] Melatih LSTM baru untuk {match_key}...")
         X_train, y_train = X[:split], y[:split]
         
+        from tensorflow.keras.models import Sequential
+        from tensorflow.keras.layers import LSTM, Dense, Dropout, Input
         lstm_model = Sequential([
             Input(shape=(SEQ_LENGTH, 3)),
             LSTM(64, activation='relu', return_sequences=True),
@@ -273,44 +270,41 @@ def recommend_by_kecamatan(kecamatan_name):
         prediction_cache[match_key] = response_data
         logging.info(f"[SUCCESS] Berhasil memproses dan menyimpan hasil untuk {match_key} di cache.")
         
-        return jsonify({
+        return {
             "status": "success",
             "source": "model",
             "data": response_data
-        }), 200
+        }
         
+    except HTTPException:
+        raise
     except Exception as e:
         logging.error(f"Terjadi kesalahan saat memproses rekomendasi {match_key}: {str(e)}")
         import traceback
         logging.error(traceback.format_exc())
-        return jsonify({
-            "status": "error",
-            "message": f"Terjadi kesalahan internal: {str(e)}"
-        }), 500
+        raise HTTPException(status_code=500, detail=f"Terjadi kesalahan internal: {str(e)}")
 
-@app.route('/api/recommend', methods=['POST'])
-def recommend_custom():
+
+class CustomRecommendRequest(BaseModel):
+    kecamatan: Optional[str] = "Kustom"
+    jenis_tanah: str
+    ph_tanah: float
+    tanah_liat_persen: float
+    tanah_pasir_persen: float
+    tanah_debu_persen: float
+    elevasi: float
+    hujan_tahunan: float
+    suhu: float
+    kelembapan: float
+    kecepatan_angin: Optional[float] = 2.0
+    resiko_bencana: Optional[str] = None
+
+@app.post("/api/recommend")
+def recommend_custom(request_data: CustomRecommendRequest):
     """
     Endpoint kustom untuk menghitung kelayakan komoditas berdasarkan input manual pengguna.
     Menerima JSON parameter tanah & iklim, lalu mengevaluasi dengan model Neural Network.
     """
-    data = request.get_json()
-    if not data:
-        return jsonify({"status": "error", "message": "Payload JSON kosong."}), 400
-        
-    required_fields = [
-        'jenis_tanah', 'ph_tanah', 'tanah_liat_persen', 
-        'tanah_pasir_persen', 'tanah_debu_persen', 'elevasi', 
-        'hujan_tahunan', 'suhu', 'kelembapan'
-    ]
-    
-    missing = [f for f in required_fields if f not in data]
-    if missing:
-        return jsonify({
-            "status": "error",
-            "message": f"Field berikut wajib diisi: {', '.join(missing)}"
-        }), 400
-        
     try:
         # Menjamin model NN sudah dilatih
         if main.recommender_bundle is None:
@@ -318,22 +312,22 @@ def recommend_custom():
             
         # Siapkan parameter input custom
         user_inputs = {
-            'kecamatan': data.get('kecamatan', 'Kustom'),
-            'jenis_tanah': data['jenis_tanah'],
-            'ph_tanah': float(data['ph_tanah']),
-            'tanah_liat_persen': float(data['tanah_liat_persen']),
-            'tanah_pasir_persen': float(data['tanah_pasir_persen']),
-            'tanah_debu_persen': float(data['tanah_debu_persen']),
-            'elevasi': float(data['elevasi']),
-            'hujan_tahunan': float(data['hujan_tahunan']),
-            'resiko_bencana': data.get('resiko_bencana', "Tinggi" if float(data['elevasi']) < 15 else "Rendah")
+            'kecamatan': request_data.kecamatan,
+            'jenis_tanah': request_data.jenis_tanah,
+            'ph_tanah': request_data.ph_tanah,
+            'tanah_liat_persen': request_data.tanah_liat_persen,
+            'tanah_pasir_persen': request_data.tanah_pasir_persen,
+            'tanah_debu_persen': request_data.tanah_debu_persen,
+            'elevasi': request_data.elevasi,
+            'hujan_tahunan': request_data.hujan_tahunan,
+            'resiko_bencana': request_data.resiko_bencana if request_data.resiko_bencana else ("Tinggi" if request_data.elevasi < 15 else "Rendah")
         }
         
         # Susun prediksi iklim buatan
         avg_pred = [
-            float(data['suhu']),
-            float(data['kelembapan']),
-            float(data.get('kecepatan_angin', 2.0))
+            request_data.suhu,
+            request_data.kelembapan,
+            request_data.kecepatan_angin
         ]
         
         # Jalankan evaluasi
@@ -351,7 +345,7 @@ def recommend_custom():
         top_score = recommendations_list[0]["score"]
         explanation = main.generate_explanation(top_crop, user_inputs, avg_pred)
         
-        return jsonify({
+        return {
             "status": "success",
             "data": {
                 "inputs": {
@@ -374,16 +368,13 @@ def recommend_custom():
                     "explanation": explanation
                 }
             }
-        }), 200
+        }
         
     except Exception as e:
         logging.error(f"Terjadi kesalahan saat evaluasi kustom: {str(e)}")
-        return jsonify({
-            "status": "error",
-            "message": f"Terjadi kesalahan evaluasi: {str(e)}"
-        }), 500
+        raise HTTPException(status_code=500, detail=f"Terjadi kesalahan evaluasi: {str(e)}")
 
-@app.route('/api/kelola-data', methods=['GET'])
+@app.get("/api/kelola-data")
 def get_kelola_data():
     """Mengembalikan data profil kecamatan dari data_loader.py."""
     try:
@@ -405,18 +396,15 @@ def get_kelola_data():
                 "resiko_bencana": row.get("resiko_bencana", "")
             })
             
-        return jsonify({
+        return {
             "status": "success",
             "data": data_list
-        })
+        }
     except Exception as e:
         logging.error(f"Error di /api/kelola-data: {str(e)}")
-        return jsonify({
-            "status": "error",
-            "message": str(e)
-        }), 500
+        raise HTTPException(status_code=500, detail=str(e))
 
-if __name__ == '__main__':
-    # Jalankan server Flask di semua interface (0.0.0.0) pada port 5000
-    logging.info("Menjalankan API server...")
-    app.run(host='0.0.0.0', port=5000, debug=False)
+if __name__ == "__main__":
+    import uvicorn
+    logging.info("Menjalankan API server FastAPI dengan Uvicorn...")
+    uvicorn.run("fastapi_app:app", host="0.0.0.0", port=5000, reload=True)

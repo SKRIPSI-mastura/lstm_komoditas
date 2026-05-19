@@ -116,21 +116,25 @@ def train_recommendation_model():
     df = pd.read_csv(FILE_DATASET_TANAMAN)
 
     le_komoditas = LabelEncoder()
-    df['komoditas_encoded'] = le_komoditas.fit_transform(df['komoditas'])
+    komoditas_encoded = le_komoditas.fit_transform(df['komoditas'])
+    komoditas_ohe = to_categorical(komoditas_encoded)
     
     le_tekstur = LabelEncoder()
-    df['tekstur_encoded'] = le_tekstur.fit_transform(df['tekstur_tanah'])
+    tekstur_encoded = le_tekstur.fit_transform(df['tekstur_tanah'])
+    tekstur_ohe = to_categorical(tekstur_encoded)
 
     le_label = LabelEncoder()
     df['label_encoded'] = le_label.fit_transform(df['label_kelayakan'])
-
-    X = df[['komoditas_encoded', 'suhu_c', 'curah_hujan_mm_tahun', 'kelembapan_persen', 
-            'ph_tanah', 'tanah_liat_persen', 'tanah_pasir_persen', 'tanah_debu_persen', 
-            'tekstur_encoded', 'elevasi_mdpl']]
     y = to_categorical(df['label_encoded'])
 
+    num_features = df[['suhu_c', 'curah_hujan_mm_tahun', 'kelembapan_persen', 
+            'ph_tanah', 'tanah_liat_persen', 'tanah_pasir_persen', 'tanah_debu_persen', 
+            'elevasi_mdpl']].values
+            
+    X = np.hstack((komoditas_ohe, num_features, tekstur_ohe))
+
     scaler = MinMaxScaler()
-    X_scaled = scaler.fit_transform(X.values)
+    X_scaled = scaler.fit_transform(X)
     
     X_train, X_test, y_train, y_test = train_test_split(X_scaled, y, test_size=0.2, random_state=42)
 
@@ -144,7 +148,7 @@ def train_recommendation_model():
     model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
     
     # Latih model klasifikasi
-    model.fit(X_train, y_train, epochs=50, batch_size=16, verbose=0)
+    model.fit(X_train, y_train, epochs=150, batch_size=16, verbose=0)
     
     # Evaluasi model
     loss, accuracy = model.evaluate(X_test, y_test, verbose=0)
@@ -186,15 +190,16 @@ def recommend_crops(climate_pred, inputs):
 
     for crop in crops_to_evaluate:
         komoditas_encoded = le_komoditas.transform([crop])[0]
+        komoditas_ohe = to_categorical(komoditas_encoded, num_classes=len(le_komoditas.classes_))
         
         tekstur_str = inputs['jenis_tanah']
         if tekstur_str in le_tekstur.classes_:
             tekstur_encoded = le_tekstur.transform([tekstur_str])[0]
         else:
             tekstur_encoded = 0
+        tekstur_ohe = to_categorical(tekstur_encoded, num_classes=len(le_tekstur.classes_))
             
-        X_input = np.array([[
-            komoditas_encoded,
+        num_features = np.array([
             suhu,
             inputs['hujan_tahunan'],
             hum,
@@ -202,9 +207,10 @@ def recommend_crops(climate_pred, inputs):
             inputs['tanah_liat_persen'],
             inputs['tanah_pasir_persen'],
             inputs['tanah_debu_persen'],
-            tekstur_encoded,
             inputs['elevasi']
-        ]])
+        ])
+        
+        X_input = np.hstack((komoditas_ohe, num_features, tekstur_ohe)).reshape(1, -1)
         
         X_scaled = scaler.transform(X_input)
         preds = model.predict(X_scaled, verbose=0)[0]
