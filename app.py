@@ -42,7 +42,6 @@ def get_suitability_label(score):
     else:
         return "Tidak Layak"
 
-@app.before_request
 def initialize_app():
     """Inisialisasi data kecamatan dan model rekomendasi di memori pada startup."""
     global KEC_DATA
@@ -59,6 +58,17 @@ def initialize_app():
             logging.info("Berhasil menginisialisasi model rekomendasi di memori.")
         except Exception as e:
             logging.error(f"Gagal melakukan inisialisasi startup: {str(e)}")
+
+# Panggil inisialisasi saat aplikasi pertama kali dimuat
+initialize_app()
+
+@app.route('/', methods=['GET'])
+def index():
+    """Endpoint root untuk memastikan API berjalan dan tidak menampilkan 404 di browser."""
+    return jsonify({
+        "status": "success",
+        "message": "Selamat datang di API Sistem Rekomendasi Komoditas Pertanian. Akses /api/health untuk status sistem."
+    }), 200
 
 @app.route('/api/health', methods=['GET'])
 def health_check():
@@ -165,37 +175,19 @@ def recommend_by_kecamatan(kecamatan_name):
         X, y = main.create_sequences(scaled_data, SEQ_LENGTH)
         
         split = int(0.8 * len(X))
-                # 3. Bangun atau Muat Model LSTM Climate (Pre-trained H5)
-        from tensorflow.keras.models import load_model
+        # 3. Bangun dan Latih Model LSTM Climate (Live Training)
+        logging.info(f"[LIVE TRAINING] Melatih LSTM baru untuk {match_key}...")
+        X_train, y_train = X[:split], y[:split]
         
-        filename_kec = match_key.lower().replace(" ", "_")
-        model_path = os.path.join(os.path.dirname(__file__), "models", f"lstm_{filename_kec}.h5")
-        
-        if os.path.exists(model_path):
-            logging.info(f"[PRE-TRAINED LOAD] Memuat model LSTM pra-latih untuk {match_key} dari: {model_path}")
-            lstm_model = load_model(model_path)
-        else:
-            logging.info(f"[LIVE TRAINING FALLBACK] Model pra-latih tidak ditemukan untuk {match_key}. Melatih LSTM baru...")
-            X_train, y_train = X[:split], y[:split]
-            X_test, y_test = X[split:], y[split:]
-            
-            lstm_model = Sequential([
-                Input(shape=(SEQ_LENGTH, 3)),
-                LSTM(64, activation='relu', return_sequences=True),
-                Dropout(0.2),
-                LSTM(32, activation='relu'),
-                Dense(3)
-            ])
-            lstm_model.compile(optimizer='adam', loss='mse')
-            lstm_model.fit(X_train, y_train, epochs=20, batch_size=32, verbose=0)
-            
-            # Simpan model untuk pemanggilan selanjutnya
-            try:
-                os.makedirs(os.path.dirname(model_path), exist_ok=True)
-                lstm_model.save(model_path)
-                logging.info(f"[LIVE TRAINING SUCCESS] Model baru disimpan di: {model_path}")
-            except Exception as save_err:
-                logging.warning(f"Gagal menyimpan model hasil latihan fallback: {str(save_err)}")
+        lstm_model = Sequential([
+            Input(shape=(SEQ_LENGTH, 3)),
+            LSTM(64, activation='relu', return_sequences=True),
+            Dropout(0.2),
+            LSTM(32, activation='relu'),
+            Dense(3)
+        ])
+        lstm_model.compile(optimizer='adam', loss='mse')
+        lstm_model.fit(X_train, y_train, epochs=20, batch_size=32, verbose=0)
         
         # 4. Lakukan Prediksi Iklim 7 Hari ke Depan
         last_seq = scaled_data[-SEQ_LENGTH:]

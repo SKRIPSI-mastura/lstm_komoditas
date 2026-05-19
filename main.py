@@ -82,10 +82,34 @@ def create_sequences(data, seq_length):
         ys.append(y)
     return np.array(xs), np.array(ys)
 
+import joblib
+
 # 4. Recommendation Model Training & Inference
 def train_recommendation_model():
     global recommender_bundle
     if recommender_bundle is not None:
+        return
+
+    model_dir = os.path.join(os.path.dirname(__file__), "models")
+    os.makedirs(model_dir, exist_ok=True)
+    
+    nn_model_path = os.path.join(model_dir, "nn_recommender.keras")
+    bundle_path = os.path.join(model_dir, "recommender_bundle.pkl")
+
+    if os.path.exists(nn_model_path) and os.path.exists(bundle_path):
+        from tensorflow.keras.models import load_model
+        print("\n[INFO] Memuat Model Neural Network Rekomendasi dari disk...")
+        model = load_model(nn_model_path)
+        bundle_data = joblib.load(bundle_path)
+        
+        recommender_bundle = {
+            'model': model,
+            'scaler': bundle_data['scaler'],
+            'le_komoditas': bundle_data['le_komoditas'],
+            'le_tekstur': bundle_data['le_tekstur'],
+            'le_label': bundle_data['le_label']
+        }
+        print("[SUCCESS] Model rekomendasi berhasil dimuat.")
         return
 
     print("\n[INFO] Melatih Model Neural Network Rekomendasi Tanaman...")
@@ -125,6 +149,15 @@ def train_recommendation_model():
     # Evaluasi model
     loss, accuracy = model.evaluate(X_test, y_test, verbose=0)
     
+    # Simpan ke disk
+    model.save(nn_model_path)
+    joblib.dump({
+        'scaler': scaler,
+        'le_komoditas': le_komoditas,
+        'le_tekstur': le_tekstur,
+        'le_label': le_label
+    }, bundle_path)
+    
     recommender_bundle = {
         'model': model,
         'scaler': scaler,
@@ -132,7 +165,7 @@ def train_recommendation_model():
         'le_tekstur': le_tekstur,
         'le_label': le_label
     }
-    print("[SUCCESS] Model rekomendasi berhasil dilatih dan disimpan di memori.")
+    print("[SUCCESS] Model rekomendasi berhasil dilatih dan disimpan di memori dan disk.")
     print(f"[EVALUASI] Akurasi Neural Network Rekomendasi Tanaman: {accuracy*100:.2f}%")
 
 def recommend_crops(climate_pred, inputs):

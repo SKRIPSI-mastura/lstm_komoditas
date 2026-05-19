@@ -58,7 +58,7 @@ curl -X GET http://localhost:5000/api/health
 ---
 
 ### 2. Mengambil Semua Daftar Kecamatan
-Mengambil daftar seluruh 24 nama kecamatan di Aceh Utara yang didukung oleh sistem.
+Mengambil daftar seluruh 27 nama kecamatan di Aceh Utara yang didukung oleh sistem.
 
 * **URL**: `/api/kecamatan`
 * **Method**: `GET`
@@ -66,7 +66,7 @@ Mengambil daftar seluruh 24 nama kecamatan di Aceh Utara yang didukung oleh sist
 #### Contoh Respon (200 OK):
 ```json
 {
-  "count": 24,
+  "count": 27,
   "data": [
     "Baktiya",
     "Baktiya Barat",
