@@ -50,6 +50,15 @@ CROP_KB = {
         "toleransi_pasir": (40, 60),
         "toleransi_debu": (20, 30)
     },
+    "Kacang Hijau": {
+        "umur_tanam_bulan": 2,
+        "kebutuhan_hujan_bulanan": [50, 80],
+        "suhu_optimal": (25, 35),
+        "ph_optimal": (5.5, 6.5),
+        "toleransi_liat": (10, 30),
+        "toleransi_pasir": (40, 60),
+        "toleransi_debu": (20, 40)
+    },
     "Ubi Kayu": {
         "umur_tanam_bulan": 4,
         "kebutuhan_hujan_bulanan": [100, 150, 150, 100],
@@ -70,6 +79,20 @@ CROP_KB = {
     }
 }
 
+def normalize_kecamatan_name(name):
+    """Normalisasi nama kecamatan ke standar database untuk menghindari mismatch spelling di CSV."""
+    n = name.strip()
+    n_lower = n.lower()
+    if n_lower in ["pirak timu", "pirak timur"]:
+        return "Pirak Timur"
+    if n_lower in ["simpang keramat", "simpang kramat", "simpang keuramat"]:
+        return "Simpang Kramat"
+    if n_lower in ["geureudong pase", "geuredong pase"]:
+        return "Geuredong Pase"
+    if n_lower in ["lapang", "lapangan"]:
+        return "Lapang"
+    return n
+
 def load_kecamatan_data():
     """
     Memuat dan menggabungkan data profil kecamatan dari CSV.
@@ -81,9 +104,9 @@ def load_kecamatan_data():
     df_tanah = pd.read_csv(FILE_TANAH)
     df_hujan = pd.read_csv(FILE_HUJAN)
 
-    df_elev["kecamatan"] = df_elev["kecamatan"].str.strip()
-    df_tanah["kecamatan"] = df_tanah["kecamatan"].str.strip()
-    df_hujan["kecamatan"] = df_hujan["kecamatan"].str.strip()
+    df_elev["kecamatan"] = df_elev["kecamatan"].apply(normalize_kecamatan_name)
+    df_tanah["kecamatan"] = df_tanah["kecamatan"].apply(normalize_kecamatan_name)
+    df_hujan["kecamatan"] = df_hujan["kecamatan"].apply(normalize_kecamatan_name)
 
     df_hujan["date"] = pd.to_datetime(df_hujan["date"].astype(str))
     df_hujan["year"] = df_hujan["date"].dt.year
@@ -109,8 +132,8 @@ def load_kecamatan_data():
     for _, row in merged.iterrows():
         kec_dict[row["kecamatan"]] = {
             "elevasi": row["elevasi_mdpl"],
-            "ph": row["ph_tanah"],              # Nilai pH tanah yang benar
-            "tanah_liat_persen": row["tanah_liat"],  # Persentase tanah liat
+            "ph": row["tanah_liat"],              # Nilai pH tanah yang benar (swapped in CSV)
+            "tanah_liat_persen": row["ph_tanah"],  # Persentase tanah liat (swapped in CSV)
             "tanah_pasir_persen": row["tanah_pasir"],
             "tanah_debu_persen": row["tanah_debu"],
             "hujan_tahunan": row["curah_hujan_tahunan"],
@@ -122,14 +145,15 @@ def load_climate_data(kecamatan_name):
     """Memuat dan menggabungkan data iklim bulanan untuk kecamatan tertentu."""
     df_iklim = pd.read_csv(FILE_IKLIM)
     df_iklim["date"] = pd.to_datetime(df_iklim["date"])
-    df_iklim["kecamatan"] = df_iklim["kecamatan"].str.strip()
+    df_iklim["kecamatan"] = df_iklim["kecamatan"].apply(normalize_kecamatan_name)
 
     df_hujan = pd.read_csv(FILE_HUJAN)
     df_hujan["date"] = pd.to_datetime(df_hujan["date"].astype(str))
-    df_hujan["kecamatan"] = df_hujan["kecamatan"].str.strip()
+    df_hujan["kecamatan"] = df_hujan["kecamatan"].apply(normalize_kecamatan_name)
 
-    df_iklim = df_iklim[df_iklim["kecamatan"] == kecamatan_name]
-    df_hujan = df_hujan[df_hujan["kecamatan"] == kecamatan_name]
+    target_name = normalize_kecamatan_name(kecamatan_name)
+    df_iklim = df_iklim[df_iklim["kecamatan"] == target_name]
+    df_hujan = df_hujan[df_hujan["kecamatan"] == target_name]
 
     if df_iklim.empty or df_hujan.empty:
         return pd.DataFrame()
@@ -222,10 +246,20 @@ def recommend_crops(monthly_climate_pred, inputs):
     """
     results = {}
 
+    # Deteksi dan koreksi penukaran kolom ph_tanah dan tanah_liat dari input/database
+    ph_tanah = inputs["ph_tanah"]
+    tanah_liat = inputs["tanah_liat_persen"]
+    if ph_tanah > 14.0 and tanah_liat <= 14.0:
+        true_ph = tanah_liat
+        true_liat = ph_tanah
+    else:
+        true_ph = ph_tanah
+        true_liat = tanah_liat
+
     for crop, kb in CROP_KB.items():
-        # Evaluasi skor parameter tanah
-        ph_score = calculate_score(inputs["ph_tanah"], kb["ph_optimal"])
-        liat_score = calculate_score(inputs["tanah_liat_persen"], kb["toleransi_liat"])
+        # Evaluasi skor parameter tanah menggunakan nilai yang benar
+        ph_score = calculate_score(true_ph, kb["ph_optimal"])
+        liat_score = calculate_score(true_liat, kb["toleransi_liat"])
         pasir_score = calculate_score(inputs["tanah_pasir_persen"], kb["toleransi_pasir"])
         debu_score = calculate_score(inputs["tanah_debu_persen"], kb["toleransi_debu"])
 
