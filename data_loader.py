@@ -8,6 +8,20 @@ FILE_ELEVASI = os.path.join(DATA_DIR, "Elevasi_Kecamatan_Aceh_Utara.csv")
 FILE_TANAH = os.path.join(DATA_DIR, "data_tanah_aceh_utara2.csv")
 FILE_HUJAN = os.path.join(DATA_DIR, "data_curah_hujan_aceh_utara.csv")
 
+def normalize_kecamatan_name(name):
+    """Normalisasi nama kecamatan ke standar database."""
+    n = name.strip()
+    n_lower = n.lower()
+    if n_lower in ["pirak timu", "pirak timur"]:
+        return "Pirak Timur"
+    if n_lower in ["simpang keramat", "simpang kramat", "simpang keuramat"]:
+        return "Simpang Kramat"
+    if n_lower in ["geureudong pase", "geuredong pase"]:
+        return "Geuredong Pase"
+    if n_lower in ["lapang", "lapangan"]:
+        return "Lapang"
+    return n
+
 def load_kecamatan_profiles():
     """
     Memuat data profil tanah dan wilayah untuk setiap kecamatan.
@@ -21,16 +35,9 @@ def load_kecamatan_profiles():
     df_tanah = pd.read_csv(FILE_TANAH)
     df_hujan = pd.read_csv(FILE_HUJAN)
 
-    # Standardisasi nama kecamatan
-    mapping = {
-        "Simpang Keramat": "Simpang Keuramat",
-        "Geureudong Pase": "Geuredong Pase",
-        "Lapang": "Lapangan"
-    }
-
     for df in [df_elev, df_tanah, df_hujan]:
-        df['kecamatan'] = df['kecamatan'].str.strip().replace(mapping)
-
+        df['kecamatan'] = df['kecamatan'].apply(normalize_kecamatan_name)
+    
     # Hitung rata-rata curah hujan tahunan dari data harian
     df_hujan['date'] = pd.to_datetime(df_hujan['date'].astype(str))
     df_hujan['year'] = df_hujan['date'].dt.year
@@ -65,7 +72,7 @@ def load_climate_data():
     print("[INFO] Memuat data iklim harian...")
     df = pd.read_csv(FILE_IKLIM)
     df['date'] = pd.to_datetime(df['date'])
-    df['kecamatan'] = df['kecamatan'].str.strip()
+    df['kecamatan'] = df['kecamatan'].apply(normalize_kecamatan_name)
 
     # Rename kolom agar konsisten
     rename_dict = {

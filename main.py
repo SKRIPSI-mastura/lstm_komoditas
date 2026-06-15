@@ -132,8 +132,8 @@ def load_kecamatan_data():
     for _, row in merged.iterrows():
         kec_dict[row["kecamatan"]] = {
             "elevasi": row["elevasi_mdpl"],
-            "ph": row["tanah_liat"],              # Nilai pH tanah yang benar (swapped in CSV)
-            "tanah_liat_persen": row["ph_tanah"],  # Persentase tanah liat (swapped in CSV)
+            "ph": row["ph_tanah"],
+            "tanah_liat_persen": row["tanah_liat"],
             "tanah_pasir_persen": row["tanah_pasir"],
             "tanah_debu_persen": row["tanah_debu"],
             "hujan_tahunan": row["curah_hujan_tahunan"],
@@ -246,15 +246,9 @@ def recommend_crops(monthly_climate_pred, inputs):
     """
     results = {}
 
-    # Deteksi dan koreksi penukaran kolom ph_tanah dan tanah_liat dari input/database
-    ph_tanah = inputs["ph_tanah"]
-    tanah_liat = inputs["tanah_liat_persen"]
-    if ph_tanah > 14.0 and tanah_liat <= 14.0:
-        true_ph = tanah_liat
-        true_liat = ph_tanah
-    else:
-        true_ph = ph_tanah
-        true_liat = tanah_liat
+    # Menggunakan nilai ph_tanah dan tanah_liat langsung tanpa hacks karena database dan CSV sudah lurus
+    true_ph = inputs["ph_tanah"]
+    true_liat = inputs["tanah_liat_persen"]
 
     for crop, kb in CROP_KB.items():
         # Evaluasi skor parameter tanah menggunakan nilai yang benar
