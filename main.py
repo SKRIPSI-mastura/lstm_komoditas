@@ -207,17 +207,50 @@ def train_lstm_climate_model(df_climate):
 
     return model, scaler, scaled_data[-SEQ_LENGTH:]
 
-def predict_future_climate(model, scaler, last_seq, months=4):
-    """Melakukan prediksi iklim autoregresif untuk beberapa bulan ke depan."""
+def predict_future_climate(model, scaler, last_seq, months=4, df_historical=None):
+    """
+    Melakukan prediksi iklim autoregresif untuk beberapa bulan ke depan.
+    Jika df_historical diberikan, model menggunakan Climatological Blending untuk
+    mengurangi akumulasi error (error propagation) dengan mencampurkan prediksi LSTM
+    dengan rata-rata iklim historis (climatology) bulanan terkait.
+    """
     predictions = []
     curr_seq = last_seq.reshape(1, len(last_seq), 3)
-    for _ in range(months):
+
+    if df_historical is not None:
+        last_date = df_historical.index[-1]
+        climatology = df_historical.groupby(df_historical.index.month).mean()
+        future_months = []
+        current_date = last_date
+        for _ in range(months):
+            current_date = current_date + pd.DateOffset(months=1)
+            future_months.append(current_date.month)
+    else:
+        future_months = []
+
+    for i in range(months):
         pred = model.predict(curr_seq, verbose=0)
-        predictions.append(pred[0])
-        curr_seq = np.append(curr_seq[:, 1:, :], pred.reshape(1, 1, 3), axis=1)
+
+        if df_historical is not None:
+            month_val = future_months[i]
+            clim_val = climatology.loc[month_val].values
+            clim_scaled = scaler.transform([clim_val])[0]
+
+            # Bobot blending (Alpha): menurun seiring bertambahnya bulan (error propagation meningkat)
+            # i=0: 80% LSTM, i=1: 60% LSTM, i=2: 40% LSTM, i=3: 20% LSTM
+            alpha = 0.8 - (i * 0.2)
+            alpha = max(0.1, alpha)
+
+            blended_pred = alpha * pred[0] + (1 - alpha) * clim_scaled
+            predictions.append(blended_pred)
+            curr_seq = np.append(curr_seq[:, 1:, :], blended_pred.reshape(1, 1, 3), axis=1)
+        else:
+            predictions.append(pred[0])
+            curr_seq = np.append(curr_seq[:, 1:, :], pred.reshape(1, 1, 3), axis=1)
 
     predicted_climate = scaler.inverse_transform(predictions)
     return predicted_climate
+
 
 def calculate_score(val, optimal_range, is_rainfall=False):
     """Menghitung skor kesesuaian nilai terhadap rentang optimal."""
