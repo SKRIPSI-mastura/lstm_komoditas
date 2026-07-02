@@ -195,9 +195,9 @@ def train_lstm_climate_model(df_climate):
 
     model = Sequential([
         Input(shape=(SEQ_LENGTH, 3)),
-        LSTM(64, activation="relu", return_sequences=True),
+        LSTM(64, activation="tanh", return_sequences=True),
         Dropout(0.2),
-        LSTM(32, activation="relu"),
+        LSTM(32, activation="tanh"),
         Dense(3)
     ])
     model.compile(optimizer="adam", loss="mse")
