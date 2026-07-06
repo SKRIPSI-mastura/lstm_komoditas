@@ -10,8 +10,8 @@ from model_factory import create_lstm_model
 # --- KONFIGURASI ---
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 MODEL_PATH = os.path.join(BASE_DIR, "models", "commodity_lstm_model.keras")
-BATCH_SIZE = 128
-EPOCHS = 40
+BATCH_SIZE = 512
+EPOCHS = 20
 
 def run_training():
     """Proses utama pelatihan model dengan penanganan imbalance."""

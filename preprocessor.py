@@ -1,4 +1,5 @@
 import os
+import sys
 import pandas as pd
 import numpy as np
 import joblib
@@ -6,12 +7,15 @@ from sklearn.preprocessing import MinMaxScaler, LabelEncoder
 
 # --- KONFIGURASI ---
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+if BASE_DIR not in sys.path:
+    sys.path.append(BASE_DIR)
+
 DATA_PATH = os.path.join(BASE_DIR, "data", "labeled_data.csv")
 MODEL_DIR = os.path.join(BASE_DIR, "models")
 SEQ_LENGTH = 30 # Menggunakan data 30 hari terakhir untuk prediksi
 
 def prepare_data():
-    """Membaca data terlabel, melakukan scaling, dan pembentukan sequence."""
+    """Membaca data terlabel, mengisi missing values, melakukan scaling, dan pembentukan sequence."""
     if not os.path.exists(MODEL_DIR):
         os.makedirs(MODEL_DIR)
 
@@ -20,6 +24,24 @@ def prepare_data():
         raise FileNotFoundError(f"File data tidak ditemukan di: {DATA_PATH}")
         
     df = pd.read_csv(DATA_PATH)
+    
+    # 0. Normalisasi kecamatan & Isi missing values (NaNs) akibat spelling mismatch di CSV asli
+    from data_loader import load_kecamatan_profiles, normalize_kecamatan_name
+    df['kecamatan'] = df['kecamatan'].apply(normalize_kecamatan_name)
+    
+    profiles = load_kecamatan_profiles()
+    mapper_elev = dict(zip(profiles['kecamatan'], profiles['elevasi_mdpl']))
+    mapper_hujan = dict(zip(profiles['kecamatan'], profiles['curah_hujan_tahunan']))
+    mapper_ph = dict(zip(profiles['kecamatan'], profiles['ph_tanah']))
+    
+    df['elevasi_mdpl'] = df['elevasi_mdpl'].fillna(df['kecamatan'].map(mapper_elev))
+    df['curah_hujan_tahunan'] = df['curah_hujan_tahunan'].fillna(df['kecamatan'].map(mapper_hujan))
+    df['ph_tanah_mean'] = df['ph_tanah_mean'].fillna(df['kecamatan'].map(mapper_ph))
+    
+    # Cadangan: ffill jika ada data cuaca harian yang bolong
+    for col in ['T2M', 'RH2M', 'WS2M']:
+        df[col] = df[col].ffill()
+        
     df['date'] = pd.to_datetime(df['date'])
     df = df.sort_values(['kecamatan', 'date'])
     
@@ -69,3 +91,4 @@ if __name__ == "__main__":
     print(f"Daftar Kelas: {classes}")
     print(f"Contoh X[0][0]: {X[0][0]}")
     print(f"Contoh y[0]: {y[0]}")
+    print("Jumlah NaNs di X:", np.isnan(X).sum())
