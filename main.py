@@ -109,11 +109,50 @@ def normalize_kecamatan_name(name):
 
 def load_kecamatan_data():
     """
-    Memuat dan menggabungkan data profil kecamatan dari CSV.
-    Kolom tanah yang digunakan: ph_tanah, tanah_liat, tanah_pasir, tanah_debu.
-    Kolom tekstur_tanah tidak digunakan karena sudah direpresentasikan
-    oleh komposisi tanah_liat, tanah_pasir, dan tanah_debu.
+    Memuat data profil kecamatan.
+    Mencoba mengambil data terbaru dari Supabase terlebih dahulu.
+    Jika gagal/offline, menggunakan data dari file CSV lokal.
     """
+    # 1. Coba ambil dari Supabase
+    try:
+        import urllib.request
+        import json
+
+        supabase_url = "https://hetclnzcfvchqoegdyil.supabase.co"
+        supabase_key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhldGNsbnpjZnZjaHFvZWdkeWlsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExNjAxNzcsImV4cCI6MjA5NjczNjE3N30.1oBnHVFQqaMinqaQ5IEF6jxOVh7TisTmT_FPlHbd0VY"
+
+        url = f"{supabase_url}/rest/v1/kecamatan?select=*"
+        req = urllib.request.Request(
+            url,
+            headers={
+                "apikey": supabase_key,
+                "Authorization": f"Bearer {supabase_key}"
+            }
+        )
+        with urllib.request.urlopen(req, timeout=5.0) as response:
+            if response.status == 200:
+                data = json.loads(response.read().decode('utf-8'))
+                if data:
+                    kec_dict = {}
+                    for row in data:
+                        nama = normalize_kecamatan_name(row.get("nama_kecamatan", ""))
+                        elev = float(row.get("elevasi_mdpl") or 0.0)
+                        kec_dict[nama] = {
+                            "elevasi": elev,
+                            "ph": float(row.get("ph_tanah") or 6.5),
+                            "tanah_liat_persen": float(row.get("tanah_liat") or 30.0),
+                            "tanah_pasir_persen": float(row.get("tanah_pasir") or 35.0),
+                            "tanah_debu_persen": float(row.get("tanah_debu") or 35.0),
+                            "hujan_tahunan": float(row.get("curah_hujan_tahunan") or 2000.0),
+                            "resiko_bencana": "Tinggi" if elev < 15 else "Rendah"
+                        }
+                    print(f"[SUCCESS] Berhasil memuat {len(kec_dict)} profil kecamatan dari Supabase.")
+                    return kec_dict
+    except Exception as e:
+        print(f"[WARNING] Gagal memuat profil kecamatan dari Supabase: {e}")
+        print("[INFO] Menggunakan fallback file CSV lokal...")
+
+    # 2. Fallback CSV Lokal
     df_elev = pd.read_csv(FILE_ELEVASI)
     df_tanah = pd.read_csv(FILE_TANAH)
     df_hujan = pd.read_csv(FILE_HUJAN)
@@ -133,8 +172,6 @@ def load_kecamatan_data():
     )
     hujan_tahunan.rename(columns={"curah_hujan": "curah_hujan_tahunan"}, inplace=True)
 
-    # Merge: gunakan hanya kolom yang diperlukan dari df_tanah
-    # Dataset tanah: kecamatan, ph_tanah, tanah_liat, tanah_pasir, tanah_debu
     merged = df_elev[["kecamatan", "elevasi_mdpl"]].merge(
         df_tanah[["kecamatan", "ph_tanah", "tanah_liat", "tanah_pasir", "tanah_debu"]],
         on="kecamatan"
@@ -156,7 +193,67 @@ def load_kecamatan_data():
     return kec_dict
 
 def load_climate_data(kecamatan_name):
-    """Memuat dan menggabungkan data iklim bulanan untuk kecamatan tertentu."""
+    """
+    Memuat data iklim bulanan untuk kecamatan tertentu.
+    Mencoba mengambil dari Supabase (data_iklim_historis) terlebih dahulu.
+    Jika gagal/kosong, menggunakan data dari file CSV lokal.
+    """
+    target_name = normalize_kecamatan_name(kecamatan_name)
+
+    # 1. Coba ambil dari Supabase
+    try:
+        import urllib.request
+        import json
+        from urllib.parse import quote
+
+        supabase_url = "https://hetclnzcfvchqoegdyil.supabase.co"
+        supabase_key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhldGNsbnpjZnZjaHFvZWdkeWlsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExNjAxNzcsImV4cCI6MjA5NjczNjE3N30.1oBnHVFQqaMinqaQ5IEF6jxOVh7TisTmT_FPlHbd0VY"
+
+        url = (
+            f"{supabase_url}/rest/v1/data_iklim_historis"
+            f"?select=*,kecamatan:kecamatan_id(nama_kecamatan)"
+        )
+        req = urllib.request.Request(
+            url,
+            headers={
+                "apikey": supabase_key,
+                "Authorization": f"Bearer {supabase_key}"
+            }
+        )
+        with urllib.request.urlopen(req, timeout=5.0) as response:
+            if response.status == 200:
+                raw_data = json.loads(response.read().decode('utf-8'))
+                if raw_data:
+                    rows = [
+                        {
+                            "date": r.get("tanggal", ""),
+                            "Suhu rata-rata": float(r.get("suhu_c") or 0.0),
+                            "Kelembapan udara": float(r.get("kelembapan_persen") or 0.0),
+                            "curah_hujan": float(r.get("curah_hujan_mm") or 0.0),
+                            "kecamatan": normalize_kecamatan_name(
+                                r.get("kecamatan", {}).get("nama_kecamatan", "")
+                            ),
+                        }
+                        for r in raw_data
+                    ]
+                    df_sb = pd.DataFrame(rows)
+                    df_sb["date"] = pd.to_datetime(df_sb["date"])
+                    df_sb = df_sb[df_sb["kecamatan"] == target_name]
+                    if not df_sb.empty:
+                        df_sb.set_index("date", inplace=True)
+                        monthly_data = df_sb.resample("ME").agg({
+                            "Suhu rata-rata": "mean",
+                            "Kelembapan udara": "mean",
+                            "curah_hujan": "sum"
+                        })
+                        monthly_data.dropna(inplace=True)
+                        print(f"[SUCCESS] Data iklim {target_name} dari Supabase: {len(monthly_data)} bulan.")
+                        return monthly_data[["Suhu rata-rata", "Kelembapan udara", "curah_hujan"]]
+    except Exception as e:
+        print(f"[WARNING] Gagal memuat data iklim dari Supabase: {e}")
+        print("[INFO] Menggunakan fallback file CSV lokal...")
+
+    # 2. Fallback CSV Lokal
     df_iklim = pd.read_csv(FILE_IKLIM)
     df_iklim["date"] = pd.to_datetime(df_iklim["date"])
     df_iklim["kecamatan"] = df_iklim["kecamatan"].apply(normalize_kecamatan_name)
@@ -165,7 +262,6 @@ def load_climate_data(kecamatan_name):
     df_hujan["date"] = pd.to_datetime(df_hujan["date"].astype(str))
     df_hujan["kecamatan"] = df_hujan["kecamatan"].apply(normalize_kecamatan_name)
 
-    target_name = normalize_kecamatan_name(kecamatan_name)
     df_iklim = df_iklim[df_iklim["kecamatan"] == target_name]
     df_hujan = df_hujan[df_hujan["kecamatan"] == target_name]
 

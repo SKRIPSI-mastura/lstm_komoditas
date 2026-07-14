@@ -37,8 +37,8 @@ def run_training():
     print("[INFO] Membagi data menjadi train dan test...")
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
     
-    print("[INFO] Melakukan stratified sub-sampling data latih untuk mempercepat training di CPU...")
-    X_train, y_train = stratified_subsample(X_train, y_train, fraction=0.02, min_samples=40)
+    # print("[INFO] Melakukan stratified sub-sampling data latih untuk mempercepat training di CPU...")
+    # X_train, y_train = stratified_subsample(X_train, y_train, fraction=0.02, min_samples=40)
     
     # 3. Hitung Bobot Kelas (Class Weighting) untuk Mengatasi Imbalance
     print("[INFO] Menghitung bobot kelas untuk mengatasi imbalance...")

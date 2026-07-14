@@ -194,6 +194,7 @@ def generate_markdown_report(classes, accuracy, loss, metrics, report_str, cm):
     correct = np.diag(cm).sum()
     total = cm.sum()
     incorrect = total - correct
+    classes_str = ", ".join(classes)
     
     # Buat tabel confusion matrix
     cm_table = "| True \\ Predicted | " + " | ".join(classes) + " |\n"
@@ -216,7 +217,7 @@ Berikut adalah ringkasan performa model LSTM pada data uji (*test set*) independ
 | **Akurasi Global (Accuracy)** | **{accuracy*100:.2f}%** | Proporsi rekomendasi komoditas yang diprediksi tepat secara agronomis. |
 | **Loss Uji (Cross-Entropy)** | **{loss:.4f}** | Nilai error fungsi kerugian (*loss*) model pada data pengujian. |
 | **Total Sampel Pengujian** | **{total:,}** | Jumlah data sequence 30 hari yang dievaluasi secara independen. |
-| **Prediksi Benar (Correct)** | **{correct:,}** | Jumlah data uji yang berhasil diklasifikasikan dengan benar (Padi & Jagung). |
+| **Prediksi Benar (Correct)** | **{correct:,}** | Jumlah data uji yang berhasil diklasifikasikan dengan benar ({classes_str}). |
 | **Prediksi Salah (Incorrect)** | **{incorrect:,}** | Jumlah data uji yang salah diklasifikasikan oleh model. |
 
 ---
@@ -246,7 +247,7 @@ Persebaran hasil prediksi aktual vs prediksi model pasca penyeimbangan kelas:
 ## 4. Analisis Sains Data & Kurva Evaluasi
 
 1.  **Kurva ROC & AUC**:
-    Area di bawah kurva (AUC - Area Under Curve) yang dihasilkan kini mencerminkan kemampuan klasifikasi yang jauh lebih tinggi daripada tebakan acak, menunjukkan bahwa model berhasil mempelajari pemisah keputusan (*decision boundary*) agronomis untuk tanaman Jagung dan Padi secara berimbang.
+    Area di bawah kurva (AUC - Area Under Curve) yang dihasilkan kini mencerminkan kemampuan klasifikasi yang jauh lebih tinggi daripada tebakan acak, menunjukkan bahwa model berhasil mempelajari pemisah keputusan (*decision boundary*) agronomis untuk seluruh komoditas secara berimbang.
 2.  **Visualisasi Tambahan**:
     Grafik berikut diperbarui di folder `lstm_komoditas/evaluation/`:
     *   **Heatmap Confusion Matrix**: `confusion_matrix.png`
