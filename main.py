@@ -271,6 +271,44 @@ def calculate_score(val, optimal_range, is_rainfall=False):
 
     return max(0, score)
 
+def get_supabase_crop_kb():
+    """
+    Mengambil parameter komoditas terbaru dari Next.js API (Supabase) secara dinamis.
+    Jika offline atau gagal, akan menggunakan fallback hardcoded CROP_KB.
+    """
+    import urllib.request
+    import json
+    import copy
+    
+    # Salin data hardcoded lokal sebagai basis
+    dynamic_kb = copy.deepcopy(CROP_KB)
+    
+    try:
+        url = "http://localhost:3000/api/komoditas"
+        req = urllib.request.Request(url, headers={'User-Agent': 'FastAPI-Backend'})
+        with urllib.request.urlopen(req, timeout=2.0) as response:
+            if response.status == 200:
+                res_body = response.read().decode('utf-8')
+                res_data = json.loads(res_body)
+                if res_data.get("status") == "success" and res_data.get("data"):
+                    db_data = res_data["data"]
+                    for item in db_data:
+                        name = item.get("nama_komoditas")
+                        if name in dynamic_kb:
+                            # Update suhu dan pH optimal berdasarkan nilai di Supabase
+                            dynamic_kb[name]["suhu_optimal"] = (
+                                float(item.get("suhu_min_c", dynamic_kb[name]["suhu_optimal"][0])),
+                                float(item.get("suhu_max_c", dynamic_kb[name]["suhu_optimal"][1]))
+                            )
+                            dynamic_kb[name]["ph_optimal"] = (
+                                float(item.get("ph_min", dynamic_kb[name]["ph_optimal"][0])),
+                                float(item.get("ph_max", dynamic_kb[name]["ph_optimal"][1]))
+                            )
+    except Exception:
+        pass
+        
+    return dynamic_kb
+
 def recommend_crops(monthly_climate_pred, inputs):
     """
     Mengevaluasi kelayakan setiap komoditas berdasarkan prediksi iklim LSTM
@@ -283,7 +321,10 @@ def recommend_crops(monthly_climate_pred, inputs):
     true_ph = inputs["ph_tanah"]
     true_liat = inputs["tanah_liat_persen"]
 
-    for crop, kb in CROP_KB.items():
+    # Ambil parameter CROP_KB yang sudah disesuaikan dengan Supabase
+    active_crop_kb = get_supabase_crop_kb()
+
+    for crop, kb in active_crop_kb.items():
         # Evaluasi skor parameter tanah menggunakan nilai yang benar
         ph_score = calculate_score(true_ph, kb["ph_optimal"])
         liat_score = calculate_score(true_liat, kb["toleransi_liat"])

@@ -10,8 +10,22 @@ from model_factory import create_lstm_model
 # --- KONFIGURASI ---
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 MODEL_PATH = os.path.join(BASE_DIR, "models", "commodity_lstm_model.keras")
-BATCH_SIZE = 512
-EPOCHS = 20
+BATCH_SIZE = 128
+EPOCHS = 15
+def stratified_subsample(X, y, fraction=0.02, min_samples=40):
+    sub_indices = []
+    np.random.seed(42)
+    for c in np.unique(y):
+        class_indices = np.where(y == c)[0]
+        n_samples = len(class_indices)
+        n_to_select = max(min_samples, int(n_samples * fraction))
+        n_to_select = min(n_samples, n_to_select)
+        
+        selected = np.random.choice(class_indices, size=n_to_select, replace=False)
+        sub_indices.extend(selected)
+        
+    np.random.shuffle(sub_indices)
+    return X[sub_indices], y[sub_indices]
 
 def run_training():
     """Proses utama pelatihan model dengan penanganan imbalance."""
@@ -22,6 +36,9 @@ def run_training():
     # 2. Split Data (80% Train, 20% Test)
     print("[INFO] Membagi data menjadi train dan test...")
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+    
+    print("[INFO] Melakukan stratified sub-sampling data latih untuk mempercepat training di CPU...")
+    X_train, y_train = stratified_subsample(X_train, y_train, fraction=0.02, min_samples=40)
     
     # 3. Hitung Bobot Kelas (Class Weighting) untuk Mengatasi Imbalance
     print("[INFO] Menghitung bobot kelas untuk mengatasi imbalance...")
@@ -44,8 +61,8 @@ def run_training():
         ModelCheckpoint(MODEL_PATH, monitor='val_loss', save_best_only=True)
     ]
     
-    # 6. Training dengan Class Weights
-    print(f"[INFO] Memulai pelatihan dengan Class Weighting (Epochs: {EPOCHS}, Batch Size: {BATCH_SIZE})...")
+    # 6. Training dengan Class Weights untuk mengatasi imbalance
+    print(f"[INFO] Memulai pelatihan (Epochs: {EPOCHS}, Batch Size: {BATCH_SIZE})...")
     history = model.fit(
         X_train, y_train,
         validation_data=(X_test, y_test),

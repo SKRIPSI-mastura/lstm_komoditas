@@ -10,11 +10,11 @@ Berikut adalah ringkasan performa model LSTM pada data uji (*test set*) independ
 
 | Parameter Evaluasi | Nilai Uji | Deskripsi |
 | :--- | :---: | :--- |
-| **Akurasi Global (Accuracy)** | **100.00%** | Proporsi rekomendasi komoditas yang diprediksi tepat secara agronomis. |
-| **Loss Uji (Cross-Entropy)** | **0.0000** | Nilai error fungsi kerugian (*loss*) model pada data pengujian. |
+| **Akurasi Global (Accuracy)** | **75.34%** | Proporsi rekomendasi komoditas yang diprediksi tepat secara agronomis. |
+| **Loss Uji (Cross-Entropy)** | **0.5560** | Nilai error fungsi kerugian (*loss*) model pada data pengujian. |
 | **Total Sampel Pengujian** | **11,675** | Jumlah data sequence 30 hari yang dievaluasi secara independen. |
-| **Prediksi Benar (Correct)** | **11,675** | Jumlah data uji yang berhasil diklasifikasikan dengan benar (Padi & Jagung). |
-| **Prediksi Salah (Incorrect)** | **0** | Jumlah data uji yang salah diklasifikasikan oleh model. |
+| **Prediksi Benar (Correct)** | **8,796** | Jumlah data uji yang berhasil diklasifikasikan dengan benar (Padi & Jagung). |
+| **Prediksi Salah (Incorrect)** | **2,879** | Jumlah data uji yang salah diklasifikasikan oleh model. |
 
 ---
 
@@ -25,12 +25,17 @@ Kinerja presisi (*precision*), sensitivitas (*recall*), dan *F1-Score* untuk mas
 ```text
               precision    recall  f1-score   support
 
-      Jagung       1.00      1.00      1.00      2990
-        Padi       1.00      1.00      1.00      8685
+      Jagung       0.98      0.68      0.81      1770
+Kacang Hijau       0.77      0.96      0.85      4126
+Kacang Tanah       0.00      0.00      0.00       418
+     Kedelai       0.58      0.97      0.73       807
+        Padi       0.78      0.64      0.70      3245
+   Ubi Jalar       0.59      1.00      0.74       775
+    Ubi Kayu       0.00      0.00      0.00       534
 
-    accuracy                           1.00     11675
-   macro avg       1.00      1.00      1.00     11675
-weighted avg       1.00      1.00      1.00     11675
+    accuracy                           0.75     11675
+   macro avg       0.53      0.61      0.55     11675
+weighted avg       0.72      0.75      0.72     11675
 
 ```
 
@@ -44,10 +49,15 @@ weighted avg       1.00      1.00      1.00     11675
 
 Persebaran hasil prediksi aktual vs prediksi model pasca penyeimbangan kelas:
 
-| True \ Predicted | Jagung | Padi |
-| --- | --- | --- |
-| **Jagung** | 2990 | 0 |
-| **Padi** | 0 | 8685 |
+| True \ Predicted | Jagung | Kacang Hijau | Kacang Tanah | Kedelai | Padi | Ubi Jalar | Ubi Kayu |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| **Jagung** | 1209 | 0 | 0 | 561 | 0 | 0 | 0 |
+| **Kacang Hijau** | 0 | 3959 | 0 | 0 | 167 | 0 | 0 |
+| **Kacang Tanah** | 0 | 3 | 0 | 0 | 415 | 0 | 0 |
+| **Kedelai** | 23 | 0 | 0 | 784 | 0 | 0 | 0 |
+| **Padi** | 0 | 1176 | 0 | 0 | 2069 | 0 | 0 |
+| **Ubi Jalar** | 0 | 0 | 0 | 0 | 0 | 775 | 0 |
+| **Ubi Kayu** | 0 | 0 | 0 | 0 | 0 | 534 | 0 |
 
 
 ---
