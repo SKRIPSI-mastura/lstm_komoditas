@@ -17,65 +17,79 @@ CROP_KB = {
     "Padi": {
         "umur_tanam_bulan": 4,
         "kebutuhan_hujan_bulanan": [150, 200, 200, 100],
-        "suhu_optimal": (25, 30),
+        "suhu_optimal": (25.0, 30.0),
         "ph_optimal": (5.5, 7.5),
-        "toleransi_liat": (30, 50),
-        "toleransi_pasir": (20, 40),
-        "toleransi_debu": (20, 40)
+        "elevasi_optimal": (0.0, 600.0),
+        "kelembapan_optimal": (70.0, 90.0),
+        "toleransi_liat": (30.0, 50.0),
+        "toleransi_pasir": (20.0, 40.0),
+        "toleransi_debu": (20.0, 40.0)
     },
     "Jagung": {
         "umur_tanam_bulan": 3,
         "kebutuhan_hujan_bulanan": [100, 150, 80],
-        "suhu_optimal": (21, 30),
+        "suhu_optimal": (21.0, 30.0),
         "ph_optimal": (5.5, 7.0),
-        "toleransi_liat": (20, 40),
-        "toleransi_pasir": (30, 50),
-        "toleransi_debu": (20, 40)
+        "elevasi_optimal": (0.0, 1500.0),
+        "kelembapan_optimal": (60.0, 80.0),
+        "toleransi_liat": (20.0, 40.0),
+        "toleransi_pasir": (30.0, 50.0),
+        "toleransi_debu": (20.0, 40.0)
     },
     "Kedelai": {
         "umur_tanam_bulan": 3,
         "kebutuhan_hujan_bulanan": [100, 120, 50],
-        "suhu_optimal": (25, 30),
+        "suhu_optimal": (25.0, 30.0),
         "ph_optimal": (5.8, 7.0),
-        "toleransi_liat": (20, 40),
-        "toleransi_pasir": (30, 50),
-        "toleransi_debu": (20, 40)
+        "elevasi_optimal": (0.0, 900.0),
+        "kelembapan_optimal": (60.0, 80.0),
+        "toleransi_liat": (20.0, 40.0),
+        "toleransi_pasir": (30.0, 50.0),
+        "toleransi_debu": (20.0, 40.0)
     },
     "Kacang Tanah": {
         "umur_tanam_bulan": 3,
         "kebutuhan_hujan_bulanan": [80, 100, 50],
-        "suhu_optimal": (25, 30),
+        "suhu_optimal": (25.0, 30.0),
         "ph_optimal": (5.5, 7.0),
-        "toleransi_liat": (10, 30),
-        "toleransi_pasir": (40, 60),
-        "toleransi_debu": (20, 30)
+        "elevasi_optimal": (0.0, 800.0),
+        "kelembapan_optimal": (55.0, 75.0),
+        "toleransi_liat": (10.0, 30.0),
+        "toleransi_pasir": (40.0, 60.0),
+        "toleransi_debu": (20.0, 30.0)
     },
     "Kacang Hijau": {
         "umur_tanam_bulan": 2,
         "kebutuhan_hujan_bulanan": [50, 80],
-        "suhu_optimal": (25, 35),
+        "suhu_optimal": (25.0, 35.0),
         "ph_optimal": (5.5, 6.5),
-        "toleransi_liat": (10, 30),
-        "toleransi_pasir": (40, 60),
-        "toleransi_debu": (20, 40)
+        "elevasi_optimal": (0.0, 800.0),
+        "kelembapan_optimal": (50.0, 75.0),
+        "toleransi_liat": (10.0, 30.0),
+        "toleransi_pasir": (40.0, 60.0),
+        "toleransi_debu": (20.0, 40.0)
     },
     "Ubi Kayu": {
         "umur_tanam_bulan": 4,
         "kebutuhan_hujan_bulanan": [100, 150, 150, 100],
-        "suhu_optimal": (25, 30),
+        "suhu_optimal": (25.0, 30.0),
         "ph_optimal": (5.5, 7.0),
-        "toleransi_liat": (10, 30),
-        "toleransi_pasir": (40, 60),
-        "toleransi_debu": (20, 40)
+        "elevasi_optimal": (0.0, 1500.0),
+        "kelembapan_optimal": (50.0, 80.0),
+        "toleransi_liat": (10.0, 30.0),
+        "toleransi_pasir": (40.0, 60.0),
+        "toleransi_debu": (20.0, 40.0)
     },
     "Ubi Jalar": {
         "umur_tanam_bulan": 4,
         "kebutuhan_hujan_bulanan": [80, 120, 120, 50],
-        "suhu_optimal": (21, 27),
+        "suhu_optimal": (21.0, 27.0),
         "ph_optimal": (5.5, 6.8),
-        "toleransi_liat": (20, 40),
-        "toleransi_pasir": (30, 50),
-        "toleransi_debu": (20, 40)
+        "elevasi_optimal": (0.0, 1500.0),
+        "kelembapan_optimal": (60.0, 80.0),
+        "toleransi_liat": (20.0, 40.0),
+        "toleransi_pasir": (30.0, 50.0),
+        "toleransi_debu": (20.0, 40.0)
     }
 }
 
@@ -304,6 +318,15 @@ def get_supabase_crop_kb():
                                 float(item.get("ph_min", dynamic_kb[name]["ph_optimal"][0])),
                                 float(item.get("ph_max", dynamic_kb[name]["ph_optimal"][1]))
                             )
+                            # Update elevasi dan kelembapan optimal berdasarkan nilai di Supabase
+                            dynamic_kb[name]["elevasi_optimal"] = (
+                                float(item.get("elevasi_min_mdpl", dynamic_kb[name]["elevasi_optimal"][0])),
+                                float(item.get("elevasi_max_mdpl", dynamic_kb[name]["elevasi_optimal"][1]))
+                            )
+                            dynamic_kb[name]["kelembapan_optimal"] = (
+                                float(item.get("kelembapan_min_persen", dynamic_kb[name]["kelembapan_optimal"][0])),
+                                float(item.get("kelembapan_max_persen", dynamic_kb[name]["kelembapan_optimal"][1]))
+                            )
     except Exception:
         pass
         
@@ -312,28 +335,30 @@ def get_supabase_crop_kb():
 def recommend_crops(monthly_climate_pred, inputs):
     """
     Mengevaluasi kelayakan setiap komoditas berdasarkan prediksi iklim LSTM
-    dan parameter tanah (ph_tanah, tanah_liat, tanah_pasir, tanah_debu).
-    Skor akhir = 40% skor tanah + 60% skor iklim.
+    dan parameter tanah (ph_tanah, tanah_liat, tanah_pasir, tanah_debu, elevasi).
+    Skor akhir = 40% skor tanah/lahan + 60% skor iklim.
     """
     results = {}
 
     # Menggunakan nilai ph_tanah dan tanah_liat langsung tanpa hacks karena database dan CSV sudah lurus
     true_ph = inputs["ph_tanah"]
     true_liat = inputs["tanah_liat_persen"]
+    true_elev = inputs["elevasi"]
 
     # Ambil parameter CROP_KB yang sudah disesuaikan dengan Supabase
     active_crop_kb = get_supabase_crop_kb()
 
     for crop, kb in active_crop_kb.items():
-        # Evaluasi skor parameter tanah menggunakan nilai yang benar
+        # Evaluasi skor parameter tanah/lahan (termasuk Elevasi)
         ph_score = calculate_score(true_ph, kb["ph_optimal"])
         liat_score = calculate_score(true_liat, kb["toleransi_liat"])
         pasir_score = calculate_score(inputs["tanah_pasir_persen"], kb["toleransi_pasir"])
         debu_score = calculate_score(inputs["tanah_debu_persen"], kb["toleransi_debu"])
+        elev_score = calculate_score(true_elev, kb["elevasi_optimal"])
 
-        soil_score = (ph_score + liat_score + pasir_score + debu_score) / 4
+        soil_score = (ph_score + liat_score + pasir_score + debu_score + elev_score) / 5
 
-        # Evaluasi skor iklim per bulan berdasarkan umur tanam
+        # Evaluasi skor iklim per bulan berdasarkan umur tanam (termasuk Kelembapan)
         umur = kb["umur_tanam_bulan"]
         eval_months = min(umur, len(monthly_climate_pred))
 
@@ -342,18 +367,20 @@ def recommend_crops(monthly_climate_pred, inputs):
 
         for i in range(eval_months):
             suhu_pred = monthly_climate_pred[i][0]
+            kelembapan_pred = monthly_climate_pred[i][1]
             hujan_pred = monthly_climate_pred[i][2]
 
             suhu_s = calculate_score(suhu_pred, kb["suhu_optimal"])
+            kelembapan_s = calculate_score(kelembapan_pred, kb["kelembapan_optimal"])
             hujan_opt = kb["kebutuhan_hujan_bulanan"][i]
             hujan_s = calculate_score(hujan_pred, (hujan_opt - 30, hujan_opt + 30), is_rainfall=True)
 
-            month_score = (suhu_s + hujan_s) / 2
+            month_score = (suhu_s + kelembapan_s + hujan_s) / 3
             climate_scores.append(month_score)
 
             monthly_reasons.append(
-                f"Bulan {i+1}: Prediksi hujan {hujan_pred:.0f}mm "
-                f"(Optimal: {hujan_opt}mm), Suhu {suhu_pred:.1f}°C."
+                f"Bulan {i+1}: Hujan {hujan_pred:.0f}mm (Opt: {hujan_opt}mm), "
+                f"Suhu {suhu_pred:.1f}°C, Kelembaban {kelembapan_pred:.1f}%."
             )
 
         avg_climate_score = np.mean(climate_scores) if climate_scores else 0
