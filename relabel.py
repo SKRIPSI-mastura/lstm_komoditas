@@ -157,11 +157,11 @@ def label_row_by_suitability(row):
     if pd.isna(elev):
         elev = prof.get('elevasi_mdpl', 10.0)
         
-    t2m = row['T2M']
+    t2m = row['T2M_roll']
     if pd.isna(t2m):
         t2m = 25.0
         
-    rh2m = row['RH2M']
+    rh2m = row['RH2M_roll']
     if pd.isna(rh2m):
         rh2m = 70.0
         
@@ -178,7 +178,7 @@ def label_row_by_suitability(row):
     scores = {}
     for crop in candidates:
         kb = crops_parameters[crop]
-        # Skor Iklim harian (Suhu & Kelembapan)
+        # Skor Iklim berbasis rolling average (Suhu & Kelembapan)
         suhu_s = calculate_score(t2m, kb["suhu_optimal"])
         kelembapan_s = calculate_score(rh2m, kb["kelembapan_optimal"])
         scores[crop] = (suhu_s + kelembapan_s) / 2.0
@@ -221,8 +221,19 @@ def label_row_by_suitability(row):
                     
     return sorted_crops[0][0]
 
-print("[INFO] Melakukan relabeling kolom target_commodity secara agronomis (hybrid iklim + tie-breaking)...")
+# Pastikan data terurut berdasarkan kecamatan dan tanggal agar rolling average tepat
+df['date'] = pd.to_datetime(df['date'])
+df = df.sort_values(['kecamatan', 'date'])
+
+print("[INFO] Menghitung rolling average 30 hari untuk T2M dan RH2M per kecamatan...")
+df['T2M_roll'] = df.groupby('kecamatan')['T2M'].transform(lambda x: x.rolling(window=30, min_periods=1).mean())
+df['RH2M_roll'] = df.groupby('kecamatan')['RH2M'].transform(lambda x: x.rolling(window=30, min_periods=1).mean())
+
+print("[INFO] Melakukan relabeling kolom target_commodity secara agronomis (hybrid iklim 30-hari rolling + tie-breaking)...")
 df['target_commodity'] = df.apply(label_row_by_suitability, axis=1)
+
+# Bersihkan kolom temporary
+df = df.drop(columns=['T2M_roll', 'RH2M_roll'])
 
 print("\n--- Distribusi Kelas Baru ---")
 dist = df['target_commodity'].value_counts()
